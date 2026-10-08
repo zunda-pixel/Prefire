@@ -61,7 +61,7 @@ binary: ## Build a universal CLI binary and copy it into the artifact bundle
 	cd PrefireExecutable && swift build -c release --arch arm64 --arch x86_64
 	mkdir -p "$(BUNDLE_BIN)"
 	rm -rf "$(BUNDLE_BIN)"/*
-	cp PrefireExecutable/.build/apple/products/release/prefire "$(BUNDLE_BIN)/prefire"
+	cp "$$(cd PrefireExecutable && swift build -c release --arch arm64 --arch x86_64 --show-bin-path)/prefire" "$(BUNDLE_BIN)/prefire"
 
 cli: ## Build the PrefireCLI wrapper (embeds the artifact bundle)
 	swift build -c release --product prefire
