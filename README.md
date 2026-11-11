@@ -122,7 +122,7 @@ Just run the test target 🚀 — Prefire will auto-generate snapshots based on 
 | Mint (*Beta*) | `mint install BarredEwe/Prefire` |
 | GitHub Actions / CI | Any of the above, see [Troubleshooting](#-troubleshooting) |
 
-Step-by-step setup is in the [Installation guide](Documentation/Installation.md).
+Step-by-step setup is in the [Installation guide](Documentation/Installation.md). The plugins build Prefire's generator from source with your project, so the first build takes longer.
 
 ### Requirements
 
@@ -343,7 +343,7 @@ All options are in the [Configuration guide](Documentation/Configuration.md). To
 |---------|-----|
 | `NavigationView` in a preview doesn't work in Playbook | Use other views or layouts for your Playbook needs |
 | Plugins don't run on CI | `defaults write com.apple.dt.Xcode IDESkipPackagePluginFingerprintValidatation -bool YES` |
-| Xcode can't generate tests in a custom path | Disable the plugin sandbox: `defaults write com.apple.dt.Xcode IDEPackageSupportDisablePluginExecutionSandbox -bool YES` |
+| `PrefireTestsPlugin` stops because of `test_file_path` | The plugin generates the tests into its work directory. Remove `test_file_path`, or generate the tests with the `prefire` CLI |
 
 ---
 

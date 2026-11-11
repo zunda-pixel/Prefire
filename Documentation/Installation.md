@@ -7,6 +7,7 @@ Supports:
 - ✅ Mint (*Beta*) (`mint install BarredEwe/Prefire`)
 - ✅ GitHub Actions / CI
 
+The plugins build Prefire's generator from source together with your project, so there is no prebuilt binary to trust. The first build compiles it with swift-syntax, Stencil and StencilSwiftKit. All packages of an app share one swift-syntax version, and Prefire accepts 600 to 604.
 
 ---
 
@@ -96,13 +97,11 @@ prefire playbook --help
 
 ### Mint
 
-Install the bundled CLI via [Mint](https://github.com/yonaskolb/Mint):
+Install the CLI via [Mint](https://github.com/yonaskolb/Mint), which builds it from source:
 
 ```bash
 mint install BarredEwe/Prefire
 ```
-
-The installed `prefire` wrapper ships the `PrefireBinary` artifactbundle as an embedded SwiftPM resource, so it is self-contained — no external binary path is required. To override the path of the embedded binary (e.g. for local development against an in-progress build), set `PREFIRE_BINARY_PATH` to the absolute path of the `prefire` executable.
 
 ---
 
