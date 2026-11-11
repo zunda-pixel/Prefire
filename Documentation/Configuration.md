@@ -139,3 +139,5 @@ Prefire will use these settings when generating files either via:
 - Plugin: attached to test or main targets in Xcode/SwiftPM
 
 To support different configurations per module, you may also use multiple `.prefire.yml` files — one per package, if needed.
+
+In an Xcode project, the tests plugin looks for `.prefire.yml` in `<project>/<test target name>/` and then next to the `.xcodeproj`. A test target kept somewhere else, such as one snapshot test target per module, can carry its own `.prefire.yml`: add the file to the test target, for example to its resources. Prefire reads that file first and resolves `template_file_path` and `__Snapshots__` from its directory.
