@@ -52,9 +52,7 @@ jobs:
         run: make slim-sim test-ios
 
       # The plugins build the generator from source and declare the files it writes in advance.
-      # Only on the newest Xcode, which the Example is kept up with.
-      - name: Build the Example with the plugins
-        if: matrix.xcode == 'Xcode_26.4'
+      - name: Build a package with the plugins
         run: make test-plugins
 
       - name: Build prefire CLI

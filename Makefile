@@ -149,13 +149,8 @@ test-ios: ## Run the Prefire library tests on an iPhone simulator
 		-skipMacroValidation \
 		-skipPackagePluginValidation
 
-test-plugins: ## Build the Example project for testing, which builds and runs both plugins
-	xcodebuild build-for-testing \
-		-project Example/PreFireExample.xcodeproj \
-		-scheme PrefireExample \
-		-destination '$(DESTINATION)' \
-		-skipMacroValidation \
-		-skipPackagePluginValidation
+test-plugins: ## Build a macOS package that uses both plugins, which builds the generator from source
+	swift build --package-path PrefirePluginTests --build-tests
 
 slim-sim: ## CI: turn off simulator services the tests do not use (undo: make restore-sim)
 	@# The services stay off on this simulator, even after it is erased, until `make restore-sim`.

@@ -1,0 +1,4 @@
+test_configuration:
+  - use_grouped_snapshots: false
+  - imports:
+      - AppKit

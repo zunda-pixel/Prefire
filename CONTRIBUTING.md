@@ -16,7 +16,7 @@ swift test      # Run the Prefire macOS tests
 make test-ios   # Run the Prefire library tests on an iPhone simulator
 make test       # Run the PrefireExecutable unit tests
 make test-cli   # Run the PrefireCLI unit tests
-make test-plugins  # Build the Example project, which builds and runs both plugins
+make test-plugins  # Build PrefirePluginTests, a macOS package that uses both plugins
 ```
 
 CI runs the same commands, see [.github/workflows/swift.yml](.github/workflows/swift.yml).
