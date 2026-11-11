@@ -16,7 +16,8 @@ jobs:
   build:
     name: Run ${{ matrix.xcode }}
     runs-on: ${{ matrix.runsOn }}
-    timeout-minutes: 10
+    # The package builds the generator and swift-syntax from source.
+    timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
@@ -50,23 +51,22 @@ jobs:
       - name: Run Prefire iOS Tests
         run: make slim-sim test-ios
 
-      - name: Build prefire CLI wrapper
-        run: swift build -c release --product prefire
+      # The plugins build the generator from source and declare the files it writes in advance.
+      # Only on the newest Xcode, which the Example is kept up with.
+      - name: Build the Example with the plugins
+        if: matrix.xcode == 'Xcode_26.4'
+        run: make test-plugins
 
-      - name: Smoke test prefire CLI wrapper
+      - name: Build prefire CLI
+        run: make cli
+
+      - name: Smoke test prefire CLI
         run: |
           set -euo pipefail
           bin=$(pwd)/.build/release/prefire
           $bin --version
           $bin --help | grep -q "Generate Playbook"
           cd /tmp && $bin --version
-          output=$(PREFIRE_BINARY_PATH=/nonexistent $bin --version 2>&1 || true)
-          if echo "$output" | grep -q "failed to launch"; then
-            echo "override error path works"
-          else
-            echo "expected 'failed to launch' error, got: $output" >&2
-            exit 1
-          fi
 
   executable-tests:
     name: PrefireExecutable tests ${{ matrix.xcode }}

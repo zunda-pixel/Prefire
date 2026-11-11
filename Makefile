@@ -7,10 +7,9 @@ SHELL := /bin/bash
 .DEFAULT_GOAL := help
 
 VERSION_FILE := PrefireExecutable/Sources/PrefireCommands/Commands/Version/Version.swift
-ARTIFACT_BUNDLE := Binaries/PrefireBinary.artifactbundle
 CUR_VERSION = $(shell sed -n 's/.*static let value: String = "\([^"]*\)".*/\1/p' $(VERSION_FILE))
-BUNDLE_DIR = $(ARTIFACT_BUNDLE)/prefire-$(CUR_VERSION)-macos
-BUNDLE_BIN = $(BUNDLE_DIR)/bin
+# The universal binary `make binary` builds for the release files (Homebrew, MCP Bundle).
+BINARY := PrefireExecutable/.build/apple/products/release/prefire
 
 # MCP Bundle of `prefire mcp` for the MCP Registry, which wants "mcp" in the file name.
 MCPB_CLI := npx --yes @anthropic-ai/mcpb@2.1.2
@@ -86,7 +85,7 @@ IOS_SIMULATOR_SLIM_JOBS := \
 # `make slim-sim` are added and removed. It survives `simctl erase`.
 IOS_SIMULATOR_DISABLED_STORE = /private/var/tmp/com.apple.CoreSimulator.SimDevice.$(IOS_SIMULATOR_ID)/disabled.plist
 
-.PHONY: help build binary cli test test-cli test-ios slim-sim restore-sim update archive mcpb clean
+.PHONY: help build binary cli test test-cli test-ios test-plugins slim-sim restore-sim update archive mcpb clean
 
 ##@ General
 
@@ -125,14 +124,10 @@ build: ## Build Prefire (iOS Simulator, Release)
 		exit $$status; \
 	}
 
-binary: ## Build a universal CLI binary and copy it into the artifact bundle
-	$(call require-version)
+binary: ## Build the universal CLI binary for the release files
 	cd PrefireExecutable && swift build -c release --arch arm64 --arch x86_64
-	mkdir -p "$(BUNDLE_BIN)"
-	rm -rf "$(BUNDLE_BIN)"/*
-	cp PrefireExecutable/.build/apple/products/release/prefire "$(BUNDLE_BIN)/prefire"
 
-cli: ## Build the PrefireCLI wrapper (embeds the artifact bundle)
+cli: ## Build the prefire CLI from source
 	swift build -c release --product prefire
 
 ##@ Test
@@ -151,6 +146,14 @@ test-ios: ## Run the Prefire library tests on an iPhone simulator
 		-parallel-testing-enabled NO \
 		-test-timeouts-enabled YES \
 		-default-test-execution-time-allowance 60 \
+		-skipMacroValidation \
+		-skipPackagePluginValidation
+
+test-plugins: ## Build the Example project for testing, which builds and runs both plugins
+	xcodebuild build-for-testing \
+		-project Example/PreFireExample.xcodeproj \
+		-scheme PrefireExample \
+		-destination '$(DESTINATION)' \
 		-skipMacroValidation \
 		-skipPackagePluginValidation
 
@@ -174,28 +177,23 @@ restore-sim: ## Turn the services of `make slim-sim` back on (takes effect on th
 
 ##@ Release
 
-update: ## Bump version and rebuild the bundled CLI (make update version=x.y.z)
+update: ## Bump version and build the CLI binary (make update version=x.y.z)
 	$(call require-version)
 	$(if $(version),,$(error Pass version, e.g. make update version=1.0.0))
 	@echo "New version: $(version)"
 	@echo "Old version: $(CUR_VERSION)"
-	mv "$(BUNDLE_DIR)" "$(ARTIFACT_BUNDLE)/prefire-$(version)-macos"
-	sed -i '' \
-		-e 's/"version": "[^"]*"/"version": "$(version)"/' \
-		-e 's|prefire-[^/"]*-macos|prefire-$(version)-macos|g' \
-		"$(ARTIFACT_BUNDLE)/info.json"
 	sed -i '' 's/static let value: String = "[^"]*"/static let value: String = "$(version)"/' "$(VERSION_FILE)"
 	$(MAKE) binary
 
-archive: ## Pack the bundled CLI into prefire.tar.gz
+archive: ## Pack the CLI binary into prefire.tar.gz
 	$(call require-version)
-	tar -czf prefire.tar.gz -C "$(BUNDLE_BIN)" prefire
+	tar -czf prefire.tar.gz -C "$(dir $(BINARY))" prefire
 
-mcpb: ## Pack the bundled CLI into prefire-mcp-<version>.mcpb and point server.json at it (needs Node)
+mcpb: ## Pack the CLI binary into prefire-mcp-<version>.mcpb and point server.json at it (needs Node)
 	$(call require-version)
 	rm -rf "$(MCPB_STAGE)"
 	mkdir -p "$(MCPB_STAGE)/server"
-	cp "$(BUNDLE_BIN)/prefire" "$(MCPB_STAGE)/server/prefire"
+	cp "$(BINARY)" "$(MCPB_STAGE)/server/prefire"
 	cp LICENSE "$(MCPB_STAGE)/LICENSE"
 	jq --arg v "$(CUR_VERSION)" '.version = $$v' mcpb/manifest.json > "$(MCPB_STAGE)/manifest.json"
 	$(MCPB_CLI) validate "$(MCPB_STAGE)/manifest.json"

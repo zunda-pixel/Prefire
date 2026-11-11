@@ -8,3 +8,5 @@ DerivedData/
 .netrc
 prefire.tar.gz
 prefire-mcp-*.mcpb
+# Prefire is a library: apps resolve its dependencies themselves.
+/Package.resolved

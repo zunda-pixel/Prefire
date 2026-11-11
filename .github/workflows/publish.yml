@@ -67,17 +67,15 @@ jobs:
           make test
           make mcpb
 
-          bundled="Binaries/PrefireBinary.artifactbundle/prefire-${VERSION}-macos/bin/prefire"
-          actual="$("$bundled" --version)"
+          actual="$(PrefireExecutable/.build/apple/products/release/prefire --version)"
           if [ "$actual" != "$VERSION" ]; then
-            echo "::error::Bundled CLI --version is '${actual}', expected '${VERSION}'"
+            echo "::error::Built CLI --version is '${actual}', expected '${VERSION}'"
             exit 1
           fi
 
           git config user.name "$GIT_USER"
           git config user.email "$GIT_EMAIL"
           git add -- \
-            Binaries/PrefireBinary.artifactbundle \
             PrefireExecutable/Sources/PrefireCommands/Commands/Version/Version.swift \
             server.json
           git commit -m "Update version to ${VERSION}"
@@ -85,7 +83,7 @@ jobs:
           git push origin "HEAD:${BRANCH}" "refs/tags/${VERSION}"
           echo "rebuilt=true" >> "$GITHUB_OUTPUT"
 
-      - name: Rebuild bundled binary and MCP bundle from current source
+      - name: Build the CLI binary and MCP bundle from current source
         if: steps.bump.outputs.rebuilt != 'true'
         run: |
           make binary
