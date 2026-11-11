@@ -1,5 +1,5 @@
 import Foundation
-@testable import prefire
+@testable import PrefireCommands
 import XCTest
 
 class ConfigDecoderTests: XCTestCase {

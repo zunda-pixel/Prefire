@@ -3,6 +3,8 @@
 
 import PackageDescription
 
+// The root Package.swift builds these sources too, for the plugins and the `prefire` product.
+// Keep the dependencies of both manifests in step.
 let package = Package(
     name: "PrefireExecutable",
     platforms: [.macOS(.v13)],
@@ -30,16 +32,21 @@ let package = Package(
                 "PathKit"
             ]
         ),
-        .executableTarget(
-            name: "prefire",
+        .target(
+            name: "PrefireCommands",
             dependencies: [
                 .product(name: "ArgumentParser", package: "swift-argument-parser"),
                 "PrefireCore",
+                "PathKit",
             ]
+        ),
+        .executableTarget(
+            name: "prefire",
+            dependencies: ["PrefireCommands"]
         ),
         .testTarget(
             name: "PrefireTests",
-            dependencies: ["prefire"]
+            dependencies: ["PrefireCommands"]
         ),
     ]
 )
