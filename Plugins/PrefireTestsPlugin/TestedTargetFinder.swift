@@ -21,7 +21,8 @@ enum TestedTargetFinder {
                 }
             }
 
-        let targetNameFromConfig = loadTargetNameFromConfig(for: String(describing: target.directory), targetName: target.name)
+        let targetDirectory = String(describing: target.directory)
+        let targetNameFromConfig = loadTargetNameFromConfig(in: [targetDirectory.appending("/\(target.name)"), targetDirectory])
         let potentialTargetName = target.name.replacingOccurrences(of: "Tests", with: "")
         let targetName = targetNameFromConfig ?? potentialTargetName
 
@@ -31,16 +32,9 @@ enum TestedTargetFinder {
     // MARK: - Private
 
     /// Easy loading of testTarget from a configuration file `.prefire.yml`
-    /// - Parameters:
-    ///   - targetDirectory: Test target directory
-    ///   - targetName: Test traget name
-    /// - Returns: Target loaded from configuration file
-    private static func loadTargetNameFromConfig(for targetDirectory: String, targetName: String) -> String? {
-        let possibleConfigPaths = [
-            targetDirectory.appending("/\(targetName)"),
-            targetDirectory
-        ]
-
+    /// - Parameter possibleConfigPaths: Directories to look for `.prefire.yml` in, in order
+    /// - Returns: Target loaded from the first configuration file found
+    private static func loadTargetNameFromConfig(in possibleConfigPaths: [String]) -> String? {
         for configPath in possibleConfigPaths {
             guard let configUrl = URL(string: "file://\(configPath)/.prefire.yml"),
                   FileManager.default.fileExists(atPath: configUrl.path) else { continue }
@@ -60,17 +54,33 @@ enum TestedTargetFinder {
 import XcodeProjectPlugin
 
 extension TestedTargetFinder {
-    /// Search for testedTarget
+    /// Directory of a test target in an Xcode project
+    ///
+    /// Xcode doesn't tell plugins where a target's files are. A test target outside `<project>/<target name>`
+    /// can point at its directory by including its own `.prefire.yml`, for example as a resource.
     /// - Parameters:
     ///   - target: Test Target
     ///   - project: Current Xcode Project
+    /// - Returns: Directory of the test target's `.prefire.yml`, or `<project>/<target name>` without one
+    static func testTargetDirectory(for target: XcodeTarget, project: XcodeProject) -> URL {
+        if let config = target.inputFiles.first(where: { $0.url.lastPathComponent == ".prefire.yml" }) {
+            return config.url.deletingLastPathComponent()
+        }
+        return project.directoryURL.appending(path: target.displayName)
+    }
+
+    /// Search for testedTarget
+    /// - Parameters:
+    ///   - target: Test Target
+    ///   - testTargetDirectory: Directory of the test target, from `testTargetDirectory(for:project:)`
+    ///   - project: Current Xcode Project
     /// - Returns: Tested Xcode Target
-    static func findTestedTarget(for target: XcodeTarget, project: XcodeProject) throws -> XcodeTarget? {
+    static func findTestedTarget(for target: XcodeTarget, testTargetDirectory: URL, project: XcodeProject) throws -> XcodeTarget? {
         guard target.isTestKind else {
             throw NSError(domain: "`PrefireTestsPlugin` must be connected to the test target. \(target.displayName) is not a test target.", code: 0)
         }
 
-        let targetNameFromConfig = loadTargetNameFromConfig(for: project.directoryURL.path, targetName: target.displayName)
+        let targetNameFromConfig = loadTargetNameFromConfig(in: [testTargetDirectory.path, project.directoryURL.path])
         let potentialTargetName = target.displayName.replacingOccurrences(of: "Tests", with: "")
         let targetName = targetNameFromConfig ?? potentialTargetName
 
