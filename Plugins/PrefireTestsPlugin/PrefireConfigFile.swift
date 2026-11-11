@@ -31,11 +31,11 @@ struct PrefireConfigFile {
             }
             let components = line.components(separatedBy: ":")
             guard currentSection == section, components.count > 1 else { continue }
-            let name = components[0].replacingOccurrences(of: " ", with: "").replacingOccurrences(of: "-", with: "")
+            let name = components[0].replacing(" ", with: "").replacing("-", with: "")
             if name == key {
                 value = components[components.count - 1]
                     .trimmingCharacters(in: .whitespaces)
-                    .replacingOccurrences(of: "\"", with: "")
+                    .replacing("\"", with: "")
             }
         }
         return value
