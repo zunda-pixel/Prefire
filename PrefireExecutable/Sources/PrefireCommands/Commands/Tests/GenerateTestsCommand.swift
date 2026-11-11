@@ -28,6 +28,7 @@ struct GeneratedTestsOptions {
     var snapshotWaitTimeout: Double?
     var fullPageSnapshots: Bool
     var voiceOverSnapshots: [String]?
+    var filePerPreviewSource: Bool
 
     init(
         target: String?,
@@ -39,7 +40,8 @@ struct GeneratedTestsOptions {
         cacheBasePath: String?,
         device: String?,
         osVersion: String?,
-        config: Config?
+        config: Config?,
+        filePerPreviewSource: Bool = false
     ) throws {
         self.target = config?.tests.target ?? target
         self.testTarget = testTarget
@@ -69,6 +71,7 @@ struct GeneratedTestsOptions {
         snapshotWaitTimeout = config?.tests.snapshotWaitTimeout
         fullPageSnapshots = config?.tests.fullPageSnapshots ?? false
         voiceOverSnapshots = config?.tests.voiceOverSnapshots
+        self.filePerPreviewSource = filePerPreviewSource
     }
 }
 
@@ -105,7 +108,8 @@ enum GenerateTestsCommand {
             inlineTemplate: try options.template?.read(.utf8) ?? EmbeddedTemplates.previewTests,
             defaultEnabled: options.prefireEnabledMarker,
             cacheDir: options.cacheBasePath,
-            useGroupedSnapshots: options.useGroupedSnapshots
+            useGroupedSnapshots: options.useGroupedSnapshots,
+            writeFilePerPreviewSource: options.filePerPreviewSource
         )
     }
 

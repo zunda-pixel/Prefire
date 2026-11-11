@@ -33,6 +33,12 @@ extension Prefire {
         @Flag(help: "Display full info")
         var verbose = false
 
+        @Flag(help: ArgumentHelp(
+            "With `use_grouped_snapshots: false`, write a file for every source containing `#Preview`, even without enabled previews. The build tool plugins declare their output files from that.",
+            visibility: .hidden
+        ))
+        var filePerPreviewSource = false
+
         func run() async throws {
             Logger.level = verbose ? .verbose : .warnings
             let config = Config.load(from: config, testTargetPath: testTargetPath, env: ProcessInfo.processInfo.environment)
@@ -48,7 +54,8 @@ extension Prefire {
                     cacheBasePath: cacheBasePath,
                     device: device,
                     osVersion: osVersion,
-                    config: config
+                    config: config,
+                    filePerPreviewSource: filePerPreviewSource
                 )
             )
         }
