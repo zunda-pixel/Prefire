@@ -166,13 +166,12 @@ restore-sim: ## Turn the services of `make slim-sim` back on (takes effect on th
 
 ##@ Release
 
-update: ## Bump version and build the CLI binary (make update version=x.y.z)
+update: ## Bump the version (make update version=x.y.z); archive and mcpb build the binary
 	$(call require-version)
 	$(if $(version),,$(error Pass version, e.g. make update version=1.0.0))
 	@echo "New version: $(version)"
 	@echo "Old version: $(CUR_VERSION)"
 	sed -i '' 's/static let value: String = "[^"]*"/static let value: String = "$(version)"/' "$(VERSION_FILE)"
-	$(MAKE) binary
 
 archive: binary ## Pack the CLI binary into prefire.tar.gz
 	$(call require-version)

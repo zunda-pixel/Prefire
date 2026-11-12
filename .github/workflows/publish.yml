@@ -85,9 +85,7 @@ jobs:
 
       - name: Build the CLI binary and MCP bundle from current source
         if: steps.bump.outputs.rebuilt != 'true'
-        run: |
-          make binary
-          make mcpb
+        run: make mcpb
 
       - name: Create archive
         run: make archive
