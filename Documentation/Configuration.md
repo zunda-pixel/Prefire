@@ -8,7 +8,7 @@ To customize **Prefire**, create a `.prefire.yml` file in the root of your proje
 test_configuration:
   target: PrefireExample
   test_target_path: ${PROJECT_DIR}/Tests
-  test_file_path: PrefireExampleTests # prefire CLI only
+  test_file_path: PrefireExampleTests
   template_file_path: CustomPreviewTests.stencil
   simulator_device: "iPhone15,2"
   required_os: 16
@@ -65,7 +65,7 @@ render_configuration:
 | `required_os`                                  | Minimal iOS version required for preview rendering. Optional                                                                                                                                                                              |
 | `snapshot_devices`                             | List of logical snapshot "targets" (used as trait collections). Each will snapshot separately. Optional                                                                                                                                   |
 | `preview_default_enabled`                      | Should all detected previews be included by default? Set `false` if you want to require `.prefireEnabled()` manually. Default: `true`                                                                                                     |
-| `use_grouped_snapshots`                        | Generate a single test file with all previews (`true`) or separate test files per source file (`false`). Default: `true`                                         |
+| `use_grouped_snapshots`                        | Generate a single test file with all previews (`true`) or separate test files per source file (`false`). With `false`, `PrefireTestsPlugin` generates a file for every Swift file of the tested target, with only a comment for the files without previews, so that the files it declares depend only on the list of sources. Default: `true` |
 | `split_snapshot_directories`                   | When `use_grouped_snapshots: false`, also write snapshots into a separate `__Snapshots__/<File>Tests.generated/` folder per source file instead of one shared `__Snapshots__/PreviewTests.generated/` folder. Closes [#80](https://github.com/BarredEwe/Prefire/issues/80). Default: `false` to keep existing snapshot layouts working — opt in once you're ready to move the files.                |
 | `sources`                                      | List of Swift files or folders to scan for previews. Defaults to inferred from the target. For `PrefireTestsPlugin`, give absolute paths such as `${PACKAGE_DIR}/Sources/MyApp`: it reads these files to know when to run |
 | `imports`                                      | Extra imports added to the generated test or playbook file                                                                                                                                                                                |

@@ -61,3 +61,11 @@ jobs:
 
       - name: Build a package with the plugins
         run: make test-plugins
+
+      - name: Build and pack the release binary
+        run: |
+          make archive
+          mkdir -p "$RUNNER_TEMP/prefire"
+          tar -xzf prefire.tar.gz -C "$RUNNER_TEMP/prefire"
+          "$RUNNER_TEMP/prefire/prefire" --version
+          "$RUNNER_TEMP/prefire/prefire" --help | grep -q "Generate Playbook"
