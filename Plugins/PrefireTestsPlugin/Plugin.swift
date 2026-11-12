@@ -8,8 +8,17 @@ struct PrefireTestsPlugin: BuildToolPlugin {
 
         let cachePath = context.pluginWorkDirectoryURL.appending(path: "Cache")
         let outputPath = context.pluginWorkDirectoryURL.appending(path: "Generated")
+        let testTargetURL = URL(filePath: String(describing: target.directory))
 
-        guard let testedTarget = try TestedTargetFinder.findTestedTarget(for: target) else {
+        let environment = [
+            "TARGET_DIR": String(describing: target.directory),
+            "PACKAGE_DIR": context.package.directoryURL.path(percentEncoded: false),
+        ]
+
+        // `--config` is the tested target's directory, so its name comes from the other places `prefire` looks.
+        let targetName = PrefireConfigFile.first(in: [testTargetURL, context.package.directoryURL])?
+            .value(of: "target", in: "test_configuration", environment: environment)
+        guard let testedTarget = try TestedTargetFinder.findTestedTarget(for: target, named: targetName) else {
             throw "❌ Prefire error: Cannot find target for testing. Please use `.prefire.yml` and set `target:` field."
         }
 
@@ -24,13 +33,7 @@ struct PrefireTestsPlugin: BuildToolPlugin {
             "--verbose",
         ]
 
-        let environment = [
-            "TARGET_DIR": String(describing: target.directory),
-            "PACKAGE_DIR": context.package.directoryURL.path(percentEncoded: false),
-        ]
-
         // Where `prefire` looks for `.prefire.yml`: `--test-target-path`, `--config`, then `PACKAGE_DIR`.
-        let testTargetURL = URL(filePath: String(describing: target.directory))
         let config = PrefireConfigFile.first(in: [testTargetURL, testedTarget.directoryURL, context.package.directoryURL])
 
         return GeneratedTests.commands(
@@ -56,7 +59,15 @@ struct PrefireTestsPlugin: BuildToolPlugin {
             let outputURL = context.pluginWorkDirectoryURL.appending(path: "Generated")
             let testTargetURL = context.xcodeProject.directoryURL.appending(path: target.displayName)
 
-            guard let testedTarget = try TestedTargetFinder.findTestedTarget(for: target, project: context.xcodeProject) else {
+            let environment = [
+                "PROJECT_DIR": context.xcodeProject.directoryURL.path(percentEncoded: false),
+            ]
+
+            // Where `prefire` looks for `.prefire.yml`: `--test-target-path`, then `--config`.
+            let config = PrefireConfigFile.first(in: [testTargetURL, context.xcodeProject.directoryURL])
+
+            let targetName = config?.value(of: "target", in: "test_configuration", environment: environment)
+            guard let testedTarget = try TestedTargetFinder.findTestedTarget(for: target, named: targetName, project: context.xcodeProject) else {
                 throw "Prefire cannot find target for testing. Please, use `.prefire.yml` file, for providing `Target Name`"
             }
 
@@ -70,13 +81,6 @@ struct PrefireTestsPlugin: BuildToolPlugin {
                 "--cache-base-path", cacheURL.path,
                 "--verbose",
             ]
-
-            let environment = [
-                "PROJECT_DIR": context.xcodeProject.directoryURL.path(percentEncoded: false),
-            ]
-
-            // Where `prefire` looks for `.prefire.yml`: `--test-target-path`, then `--config`.
-            let config = PrefireConfigFile.first(in: [testTargetURL, context.xcodeProject.directoryURL])
 
             return GeneratedTests.commands(
                 tool: executable,

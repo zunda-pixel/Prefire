@@ -143,7 +143,7 @@ class GenerateTestsCommandTests: XCTestCase {
         var config = Config()
         config.tests.testFilePath = "User/Tests/Custom.generated.swift"
 
-        func output(declaredOutputs: [String]) throws -> Path {
+        func output(pluginRun: PluginRun?) throws -> Path {
             try GeneratedTestsOptions(
                 target: nil,
                 testTarget: nil,
@@ -155,11 +155,11 @@ class GenerateTestsCommandTests: XCTestCase {
                 device: nil,
                 osVersion: nil,
                 config: config,
-                declaredOutputs: declaredOutputs
+                pluginRun: pluginRun
             ).output
         }
 
-        XCTAssertEqual(try output(declaredOutputs: []), "User/Tests/Custom.generated.swift")
-        XCTAssertEqual(try output(declaredOutputs: ["Plugin/Generated/PreviewTests.generated.swift"]), "Plugin/Generated")
+        XCTAssertEqual(try output(pluginRun: nil), "User/Tests/Custom.generated.swift")
+        XCTAssertEqual(try output(pluginRun: PluginRun(declaredOutputs: ["Plugin/Generated/PreviewTests.generated.swift"])), "Plugin/Generated")
     }
 }

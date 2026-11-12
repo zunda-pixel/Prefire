@@ -24,10 +24,12 @@ struct PrefirePlaybookPlugin: BuildToolPlugin {
             "PACKAGE_DIR": context.package.directoryURL.path(percentEncoded: false),
         ]
 
-        let sources = (target as? SwiftSourceModuleTarget)?.sourceFiles.filter { $0.type == .source }.map(\.url) ?? []
+        let targetURL = URL(filePath: targetPath)
+        // Other targets don't list their files: search the directory, as `prefire` did when given it.
+        let sources = (target as? SwiftSourceModuleTarget)?.sourceFiles.filter { $0.type == .source }.map(\.url)
+            ?? PrefireConfigFile.swiftFiles(at: targetURL)
 
         // Where `prefire` looks for `.prefire.yml`: `--config`, then `PACKAGE_DIR`.
-        let targetURL = URL(filePath: targetPath)
         let config = PrefireConfigFile.first(in: [targetURL, context.package.directoryURL])
 
         return GeneratedPlaybook.commands(
@@ -102,12 +104,8 @@ enum GeneratedPlaybook {
         var inputs = sources
         if let config {
             inputs.append(config.url)
-            if let template = config.value(of: "template_file_path", in: section, environment: environment) {
-                // `prefire` resolves it from `target`, or else from the target's directory.
-                let base = config.value(of: "target", in: section, environment: environment).map { URL(filePath: $0) }
-                let url = (base ?? targetDirectory).appending(path: template)
-                if FileManager.default.fileExists(atPath: url.path) { inputs.append(url) }
-            }
+            let template = config.template(in: section, baseKey: "target", defaultBase: targetDirectory, environment: environment)
+            inputs += template.map { [$0] } ?? []
         }
 
         let output = outputDirectory.appending(path: "PreviewModels.generated.swift")

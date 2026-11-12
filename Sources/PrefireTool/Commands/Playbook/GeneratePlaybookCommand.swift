@@ -15,7 +15,7 @@ struct GeneratedPlaybookOptions {
     var cacheBasePath: Path?
     var imports: [String]?
     var testableImports: [String]?
-    var declaredOutputs: [Path]
+    var pluginRun: PluginRun?
 
     init(
         targetPath: String?,
@@ -24,7 +24,7 @@ struct GeneratedPlaybookOptions {
         template: String?,
         cacheBasePath: String?,
         config: Config?,
-        declaredOutputs: [String] = []
+        pluginRun: PluginRun? = nil
     ) throws {
         self.targetPath = config?.playbook.targetPath ?? targetPath
         self.sources = sources.isEmpty ? [.current] : sources.compactMap({ Path($0) })
@@ -44,7 +44,7 @@ struct GeneratedPlaybookOptions {
         self.cacheBasePath = cacheBasePath.flatMap({ Path($0) })
         imports = config?.playbook.imports
         testableImports = config?.playbook.testableImports
-        self.declaredOutputs = declaredOutputs.map { Path($0) }
+        self.pluginRun = pluginRun
     }
 }
 
@@ -64,7 +64,7 @@ enum GeneratePlaybookCommand {
             defaultEnabled: options.previewDefaultEnabled,
             cacheDir: options.cacheBasePath,
             useGroupedSnapshots: true, // Playbooks are always grouped
-            declaredOutputs: options.declaredOutputs.isEmpty ? nil : options.declaredOutputs
+            declaredOutputs: options.pluginRun?.declaredOutputs
         )
     }
 

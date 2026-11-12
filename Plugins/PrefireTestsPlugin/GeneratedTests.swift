@@ -18,20 +18,15 @@ enum GeneratedTests {
         outputDirectory: URL
     ) -> [Command] {
         let targetSources = targetSources.filter { $0.pathExtension == "swift" }
-        // `prefire` reads the files of `sources` in `.prefire.yml` instead of the target's.
-        let sources = config?.values(of: "sources", in: section, environment: environment).map(swiftFiles(at:)) ?? targetSources
+        let sources = config?.sourceFiles(in: section, environment: environment) ?? targetSources
         let outputs = outputFiles(sources: sources, config: config, environment: environment, outputDirectory: outputDirectory)
         guard !outputs.isEmpty else { return [] }
 
         var inputs = sources
         if let config {
             inputs.append(config.url)
-            if let template = config.value(of: "template_file_path", in: section, environment: environment) {
-                // `prefire` resolves it from `test_target_path`, or else from the test target.
-                let base = config.value(of: "test_target_path", in: section, environment: environment).map { URL(filePath: $0) }
-                let url = (base ?? testTargetDirectory).appending(path: template)
-                if FileManager.default.fileExists(atPath: url.path) { inputs.append(url) }
-            }
+            let template = config.template(in: section, baseKey: "test_target_path", defaultBase: testTargetDirectory, environment: environment)
+            inputs += template.map { [$0] } ?? []
         }
 
         return [
@@ -47,7 +42,8 @@ enum GeneratedTests {
     }
 
     /// The files `prefire tests` writes: one with every preview, or with `use_grouped_snapshots: false` one per
-    /// source containing `#Preview`. It writes a comment into a declared file it has no enabled previews for.
+    /// source. It writes a comment into a declared file it has no enabled previews for, so the files only depend
+    /// on the list of sources.
     static func outputFiles(sources: [URL], config: PrefireConfigFile?, environment: [String: String], outputDirectory: URL) -> [URL] {
         guard !sources.isEmpty else { return [] }
 
@@ -56,29 +52,7 @@ enum GeneratedTests {
             return [outputDirectory.appending(path: groupedFileName)]
         }
 
-        let names = Set(sources.filter { source in
-            (try? String(contentsOf: source, encoding: .utf8))?.contains("#Preview") == true
-        }.map { $0.deletingPathExtension().lastPathComponent })
-
+        let names = Set(sources.map { $0.deletingPathExtension().lastPathComponent })
         return names.sorted().map { outputDirectory.appending(path: "\($0)Tests.generated.swift") }
-    }
-
-    /// The Swift files at `paths`, files or directories searched recursively, as `prefire` finds them.
-    private static func swiftFiles(at paths: [String]) -> [URL] {
-        var files: Set<URL> = []
-        for path in paths {
-            let url = URL(filePath: path)
-            var isDirectory: ObjCBool = false
-            guard FileManager.default.fileExists(atPath: url.path, isDirectory: &isDirectory) else { continue }
-            if isDirectory.boolValue {
-                let enumerator = FileManager.default.enumerator(at: url, includingPropertiesForKeys: nil)
-                while let file = enumerator?.nextObject() as? URL {
-                    if file.pathExtension == "swift" { files.insert(file) }
-                }
-            } else if url.pathExtension == "swift" {
-                files.insert(url)
-            }
-        }
-        return files.sorted { $0.path < $1.path }
     }
 }

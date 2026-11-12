@@ -32,11 +32,12 @@ extension Prefire {
 
         func run() async throws {
             Logger.level = verbose ? .verbose : .warnings
+            let pluginRun = PluginRun(declaredOutputs: declaredOutput)
             let config = Config.load(
                 from: config,
                 testTargetPath: nil,
-                env: ProcessInfo.processInfo.environment,
-                includeCurrentDirectory: declaredOutput.isEmpty
+                env: PluginRun.environment(for: pluginRun),
+                includeCurrentDirectory: pluginRun == nil
             )
 
             try await GeneratePlaybookCommand.run(
@@ -47,7 +48,7 @@ extension Prefire {
                     template: template,
                     cacheBasePath: cacheBasePath,
                     config: config,
-                    declaredOutputs: declaredOutput
+                    pluginRun: pluginRun
                 )
             )
         }

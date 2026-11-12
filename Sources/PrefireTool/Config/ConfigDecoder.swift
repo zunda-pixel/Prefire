@@ -226,6 +226,7 @@ final class ConfigDecoder {
             if let key = value.findKey(), let envValue = env[key] {
                 value = value.replacingOccurrences(of: "${\(key)}", with: envValue)
             }
+            warnIfUnresolved(value)
 
             values.append(value)
         }
@@ -240,8 +241,15 @@ final class ConfigDecoder {
         if let key = value?.findKey(), let envValue = env[key] {
             value = value?.replacingOccurrences(of: "${\(key)}", with: envValue)
         }
+        value.map(warnIfUnresolved)
 
         return value
+    }
+
+    private func warnIfUnresolved(_ value: String) {
+        guard value.contains("${") else { return }
+        // "warning:" makes Xcode and SwiftPM show it as a build warning.
+        Logger.warning("warning: Prefire can't replace the variable in `\(value)` of .prefire.yml: it isn't set, or a value has more than one. When a plugin runs Prefire, only PACKAGE_DIR, TARGET_DIR and PROJECT_DIR are set.")
     }
 }
 

@@ -2,6 +2,6 @@ test_configuration:
   - use_grouped_snapshots: false
   - sources:
       - ${PACKAGE_DIR}/Sources/Previews
-  - test_file_path: Tests/PreviewsTests/{PREVIEW_FILE_NAME}Tests.generated.swift
+  - test_file_path: Tests/PreviewsTests
   - imports:
       - AppKit

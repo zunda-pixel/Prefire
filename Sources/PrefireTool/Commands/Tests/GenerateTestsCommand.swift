@@ -28,7 +28,7 @@ struct GeneratedTestsOptions {
     var snapshotWaitTimeout: Double?
     var fullPageSnapshots: Bool
     var voiceOverSnapshots: [String]?
-    var declaredOutputs: [Path]
+    var pluginRun: PluginRun?
 
     init(
         target: String?,
@@ -41,7 +41,7 @@ struct GeneratedTestsOptions {
         device: String?,
         osVersion: String?,
         config: Config?,
-        declaredOutputs: [String] = []
+        pluginRun: PluginRun? = nil
     ) throws {
         self.target = config?.tests.target ?? target
         self.testTarget = testTarget
@@ -57,7 +57,7 @@ struct GeneratedTestsOptions {
 
         self.sources = (config?.tests.sources ?? sources).compactMap({ Path($0) })
         // A build tool plugin chooses the output, and has declared the files in it.
-        let testFilePath = declaredOutputs.isEmpty ? config?.tests.testFilePath : nil
+        let testFilePath = pluginRun == nil ? config?.tests.testFilePath : nil
         self.output = (testFilePath ?? output).flatMap({ Path($0) }) ?? .current
         prefireEnabledMarker = config?.tests.previewDefaultEnabled ?? true
         self.cacheBasePath = cacheBasePath.flatMap({ Path($0) })
@@ -73,7 +73,7 @@ struct GeneratedTestsOptions {
         snapshotWaitTimeout = config?.tests.snapshotWaitTimeout
         fullPageSnapshots = config?.tests.fullPageSnapshots ?? false
         voiceOverSnapshots = config?.tests.voiceOverSnapshots
-        self.declaredOutputs = declaredOutputs.map { Path($0) }
+        self.pluginRun = pluginRun
     }
 }
 
@@ -111,7 +111,7 @@ enum GenerateTestsCommand {
             defaultEnabled: options.prefireEnabledMarker,
             cacheDir: options.cacheBasePath,
             useGroupedSnapshots: options.useGroupedSnapshots,
-            declaredOutputs: options.declaredOutputs.isEmpty ? nil : options.declaredOutputs
+            declaredOutputs: options.pluginRun?.declaredOutputs
         )
     }
 

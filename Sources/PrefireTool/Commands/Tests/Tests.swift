@@ -41,11 +41,12 @@ extension Prefire {
 
         func run() async throws {
             Logger.level = verbose ? .verbose : .warnings
+            let pluginRun = PluginRun(declaredOutputs: declaredOutput)
             let config = Config.load(
                 from: config,
                 testTargetPath: testTargetPath,
-                env: ProcessInfo.processInfo.environment,
-                includeCurrentDirectory: declaredOutput.isEmpty
+                env: PluginRun.environment(for: pluginRun),
+                includeCurrentDirectory: pluginRun == nil
             )
 
             try await GenerateTestsCommand.run(
@@ -60,7 +61,7 @@ extension Prefire {
                     device: device,
                     osVersion: osVersion,
                     config: config,
-                    declaredOutputs: declaredOutput
+                    pluginRun: pluginRun
                 )
             )
         }
