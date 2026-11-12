@@ -7,8 +7,6 @@ Supports:
 - ✅ Mint (*Beta*) (`mint install BarredEwe/Prefire`)
 - ✅ GitHub Actions / CI
 
-The plugins build Prefire's generator from source together with your project, so there is no prebuilt binary to trust. The first build compiles it with swift-syntax, Stencil and StencilSwiftKit. All packages of an app share one swift-syntax version, and Prefire accepts 600 to 604.
-
 ---
 
 ### Xcode Build Tool Plugin

@@ -16,7 +16,6 @@ jobs:
   build:
     name: Run ${{ matrix.xcode }}
     runs-on: ${{ matrix.runsOn }}
-    # The package builds the generator and swift-syntax from source.
     timeout-minutes: 30
     strategy:
       fail-fast: false
@@ -51,7 +50,6 @@ jobs:
       - name: Run Prefire iOS Tests
         run: make slim-sim test-ios
 
-      # The plugins build the generator from source and declare the files it writes in advance.
       - name: Build a package with the plugins
         run: make test-plugins
 
