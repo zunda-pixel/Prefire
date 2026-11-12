@@ -113,8 +113,10 @@ enum GeneratedPlaybook {
             .buildCommand(
                 displayName: "Running Prefire",
                 executable: tool,
-                arguments: arguments + ["--declared-output", output.path] + sources.map(\.path),
-                environment: environment,
+                arguments: arguments
+                    + ["--plugin-run"]
+                    + environment.sorted { $0.key < $1.key }.flatMap { ["--plugin-variable", "\($0.key)=\($0.value)"] }
+                    + sources.map(\.path),
                 inputFiles: inputs,
                 outputFiles: [output]
             ),

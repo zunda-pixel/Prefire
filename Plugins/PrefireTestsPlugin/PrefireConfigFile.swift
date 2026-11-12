@@ -2,7 +2,7 @@ import Foundation
 import PackagePlugin
 
 /// `.prefire.yml`, read the way `prefire` reads it, for the little a plugin has to know before running it.
-/// Plugins can't share code, so PrefirePlaybookPlugin links to this file.
+/// Plugins can't share code, so both plugins have this file; `make test-plugins` checks that they're the same.
 struct PrefireConfigFile {
     static let fileName = ".prefire.yml"
     private static let sections = ["test_configuration", "playbook_configuration", "render_configuration"]
@@ -27,7 +27,7 @@ struct PrefireConfigFile {
     func value(of key: String, in section: String, environment: [String: String]) -> String? {
         keyLines(of: key, in: section).last.map { index in
             let components = lines[index].components(separatedBy: ":")
-            return resolved(components[components.count - 1], environment: environment)
+            return Self.resolved(components[components.count - 1], environment: environment)
         }
     }
 
@@ -40,7 +40,7 @@ struct PrefireConfigFile {
         var values: [String] = []
         for line in lines[(index + 1)...] {
             guard !line.contains(":") else { break }
-            let value = resolved(line.replacing("- ", with: ""), environment: environment)
+            let value = Self.resolved(line.replacing("- ", with: ""), environment: environment)
             if !value.isEmpty { values.append(value) }
         }
         return values
@@ -103,17 +103,14 @@ struct PrefireConfigFile {
         return indices
     }
 
-    private func resolved(_ value: String, environment: [String: String]) -> String {
+    private static func resolved(_ value: String, environment: [String: String]) -> String {
         var value = value.trimmingCharacters(in: .whitespaces).replacing("\"", with: "")
         if value.contains("${"),
            let name = value.components(separatedBy: "${").last?.components(separatedBy: "}").first,
            let replacement = environment[name] {
             value = value.replacing("${\(name)}", with: replacement)
         }
-        if value.contains("${") {
-            let names = environment.keys.sorted().joined(separator: ", ")
-            Diagnostics.warning("Prefire can't replace the variable in `\(value)` of \(url.path): the plugin sets only \(names), and Prefire replaces one variable per value.")
-        }
+        // `prefire` warns about a variable left, with the same variables.
         return value
     }
 }

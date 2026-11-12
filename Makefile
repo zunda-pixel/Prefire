@@ -142,6 +142,8 @@ test-ios: ## Run the Prefire library tests on an iPhone simulator
 		-skipPackagePluginValidation
 
 test-plugins: ## Build a macOS package that uses both plugins, which builds the generator from source
+	@# Plugins can't share code: both have a copy of this file.
+	cmp Plugins/PrefireTestsPlugin/PrefireConfigFile.swift Plugins/PrefirePlaybookPlugin/PrefireConfigFile.swift
 	swift build --package-path PrefirePluginTests --build-tests
 
 slim-sim: ## CI: turn off simulator services the tests do not use (undo: make restore-sim)

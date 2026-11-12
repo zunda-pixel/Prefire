@@ -1,3 +1,4 @@
+#if os(macOS)
 import Foundation
 import PrefireCore
 import PathKit
@@ -55,15 +56,16 @@ struct GeneratedTestsOptions {
             self.template = Path(template)
         }
 
-        self.sources = (config?.tests.sources ?? sources).compactMap({ Path($0) })
-        // A build tool plugin chooses the output, and has declared the files in it.
+        // A build tool plugin passes the sources and chooses the output.
+        let configSources = pluginRun == nil ? config?.tests.sources : nil
+        self.sources = (configSources ?? sources).compactMap({ Path($0) })
         let testFilePath = pluginRun == nil ? config?.tests.testFilePath : nil
         self.output = (testFilePath ?? output).flatMap({ Path($0) }) ?? .current
         prefireEnabledMarker = config?.tests.previewDefaultEnabled ?? true
         self.cacheBasePath = cacheBasePath.flatMap({ Path($0) })
         self.device = config?.tests.device ?? device
         self.osVersion = config?.tests.osVersion ?? osVersion
-        useGroupedSnapshots = config?.tests.useGroupedSnapshots ?? true
+        useGroupedSnapshots = pluginRun?.groupedSnapshots ?? config?.tests.useGroupedSnapshots ?? true
         splitSnapshotDirectories = config?.tests.splitSnapshotDirectories ?? false
         snapshotDevices = config?.tests.snapshotDevices
         imports = config?.tests.imports
@@ -102,17 +104,26 @@ enum GenerateTestsCommand {
     }
 
     static func run(_ options: GeneratedTestsOptions) async throws {
+        let output = options.output + (options.useGroupedSnapshots ? Constants.snapshotFileName : Constants.snapshotFileTemplated)
         try await PrefireGenerator.generate(
             version: Prefire.Version.value,
             sources: options.sources,
-            output: options.output + (options.useGroupedSnapshots ? Constants.snapshotFileName : Constants.snapshotFileTemplated),
+            output: output,
             arguments: await GenerateTestsCommand.makeArguments(for: options),
             inlineTemplate: try options.template?.read(.utf8) ?? EmbeddedTemplates.previewTests,
             defaultEnabled: options.prefireEnabledMarker,
             cacheDir: options.cacheBasePath,
             useGroupedSnapshots: options.useGroupedSnapshots,
-            declaredOutputs: options.pluginRun?.declaredOutputs
+            declaredOutputs: options.pluginRun.map { _ in declaredOutputs(for: options, output: output) }
         )
+    }
+
+    /// The files a build tool plugin declares: the one file, or one per source, as `PrefireTestsPlugin` works them out.
+    static func declaredOutputs(for options: GeneratedTestsOptions, output: Path) -> [Path] {
+        guard !options.useGroupedSnapshots else { return [output] }
+        return options.sources.map { source in
+            Path(output.string.replacingOccurrences(of: "{PREVIEW_FILE_NAME}", with: source.lastComponentWithoutExtension))
+        }
     }
 
     static func makeArguments(for options: GeneratedTestsOptions) async -> [String: NSObject] {
@@ -161,3 +172,4 @@ enum GenerateTestsCommand {
         ].filter({ $0.value != nil }) as? [String: NSObject] ?? [:]
     }
 }
+#endif

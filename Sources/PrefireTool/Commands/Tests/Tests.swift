@@ -1,3 +1,4 @@
+#if os(macOS)
 @preconcurrency import ArgumentParser
 import Foundation
 import PrefireCore
@@ -33,15 +34,16 @@ extension Prefire {
         @Flag(help: "Display full info")
         var verbose = false
 
-        @Option(help: ArgumentHelp(
-            "A file the build tool plugin declared. Prefire writes only these, into `--output`, and a comment into the ones without previews.",
-            visibility: .hidden
-        ))
-        var declaredOutput: [String] = []
+        @Flag(name: .customLong("plugin-run"), help: ArgumentHelp("Run by a build tool plugin.", visibility: .hidden))
+        var isPluginRun = false
+        @Option(help: ArgumentHelp("A variable the plugin replaced in `.prefire.yml`, as NAME=VALUE.", visibility: .hidden))
+        var pluginVariable: [String] = []
+        @Option(help: ArgumentHelp("Whether the plugin declared one file with every preview.", visibility: .hidden))
+        var pluginGroupedSnapshots: Bool?
 
         func run() async throws {
             Logger.level = verbose ? .verbose : .warnings
-            let pluginRun = PluginRun(declaredOutputs: declaredOutput)
+            let pluginRun = try PluginRun(isPluginRun: isPluginRun, variables: pluginVariable, groupedSnapshots: pluginGroupedSnapshots)
             let config = Config.load(
                 from: config,
                 testTargetPath: testTargetPath,
@@ -67,3 +69,4 @@ extension Prefire {
         }
     }
 }
+#endif

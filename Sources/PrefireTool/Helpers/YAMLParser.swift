@@ -1,3 +1,4 @@
+#if os(macOS)
 import Foundation
 
 struct YAMLParser {
@@ -56,3 +57,4 @@ struct YAMLParser {
         return "\"\(escaped)\""
     }
 }
+#endif

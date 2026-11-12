@@ -1,3 +1,4 @@
+#if os(macOS)
 @preconcurrency import ArgumentParser
 import Foundation
 import PrefireCore
@@ -86,3 +87,4 @@ enum RenderOutput {
         return lines.joined(separator: "\n")
     }
 }
+#endif

@@ -32,11 +32,12 @@ public extension ProcessRunning {
     }
 }
 
-/// Runs programs with `Process`.
+/// Runs programs with `Process`, which only macOS has. The root package also builds for iOS.
 public struct ProcessRunner: ProcessRunning {
     public init() {}
 
     public func run(executable: String, arguments: [String], environment: [String: String], logFile: URL) throws -> Int32 {
+        #if os(macOS)
         try FileManager.default.createDirectory(at: logFile.deletingLastPathComponent(), withIntermediateDirectories: true)
         if !FileManager.default.fileExists(atPath: logFile.path) {
             _ = FileManager.default.createFile(atPath: logFile.path, contents: nil)
@@ -55,6 +56,9 @@ public struct ProcessRunner: ProcessRunning {
         try process.run()
         process.waitUntilExit()
         return process.terminationStatus
+        #else
+        throw Self.unavailable
+        #endif
     }
 
     public func run(
@@ -64,6 +68,7 @@ public struct ProcessRunner: ProcessRunning {
         logFile: URL,
         until isFinished: @escaping @Sendable (String) -> Bool
     ) throws -> Int32 {
+        #if os(macOS)
         try FileManager.default.createDirectory(at: logFile.deletingLastPathComponent(), withIntermediateDirectories: true)
         if !FileManager.default.fileExists(atPath: logFile.path) {
             _ = FileManager.default.createFile(atPath: logFile.path, contents: nil)
@@ -98,9 +103,13 @@ public struct ProcessRunner: ProcessRunning {
         }
         process.waitUntilExit()
         return process.terminationReason == .uncaughtSignal ? 0 : process.terminationStatus
+        #else
+        throw Self.unavailable
+        #endif
     }
 
     public func capture(executable: String, arguments: [String]) throws -> (status: Int32, output: String) {
+        #if os(macOS)
         let output = Pipe()
         let process = Process()
         process.executableURL = URL(fileURLWithPath: executable)
@@ -113,7 +122,12 @@ public struct ProcessRunner: ProcessRunning {
         let data = output.fileHandleForReading.readDataToEndOfFile()
         process.waitUntilExit()
         return (process.terminationStatus, String(decoding: data, as: UTF8.self))
+        #else
+        throw Self.unavailable
+        #endif
     }
+
+    private static let unavailable = RenderError.invalidOption("Prefire runs programs on macOS only.")
 }
 
 /// Where and how `prefire render` builds and runs the snapshot tests.

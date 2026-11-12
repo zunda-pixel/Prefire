@@ -15,10 +15,11 @@ struct PrefireTestsPlugin: BuildToolPlugin {
             "PACKAGE_DIR": context.package.directoryURL.path(percentEncoded: false),
         ]
 
-        // `--config` is the tested target's directory, so its name comes from the other places `prefire` looks.
-        let targetName = PrefireConfigFile.first(in: [testTargetURL, context.package.directoryURL])?
-            .value(of: "target", in: "test_configuration", environment: environment)
-        guard let testedTarget = try TestedTargetFinder.findTestedTarget(for: target, named: targetName) else {
+        guard let testedTarget = try TestedTargetFinder.findTestedTarget(
+            for: target,
+            packageDirectory: context.package.directoryURL,
+            environment: environment
+        ) else {
             throw "❌ Prefire error: Cannot find target for testing. Please use `.prefire.yml` and set `target:` field."
         }
 

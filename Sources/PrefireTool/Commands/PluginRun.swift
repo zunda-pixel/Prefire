@@ -1,24 +1,33 @@
+#if os(macOS)
+import ArgumentParser
 import Foundation
-import PathKit
 
-/// A run by a build tool plugin, which passes the files it declared with `--declared-output`. The plugin reads
-/// `.prefire.yml` before it runs Prefire, so Prefire reads it the same way then: only from the paths the plugin
-/// passes, without `test_file_path`, and replacing only the variables the plugin sets.
+/// A run by a build tool plugin. The plugin reads `.prefire.yml` and works out the files Prefire writes before it
+/// runs Prefire, so Prefire takes what the plugin decided instead of reading it again: the sources (from the
+/// arguments, not `sources`), the variables to replace and whether the snapshots are grouped. It doesn't read
+/// `test_file_path` or a `.prefire.yml` in the working directory either, and writes only the files that follow.
 struct PluginRun {
-    /// The variables the plugins set for Prefire. Xcode passes its own environment on as well.
-    private static let variables: Set<String> = ["PACKAGE_DIR", "TARGET_DIR", "PROJECT_DIR"]
+    /// The variables the plugin replaced in `.prefire.yml`. Xcode passes its environment on to the build command,
+    /// so Prefire doesn't take them from there.
+    let variables: [String: String]
+    /// Whether the plugin generates one file with every preview; `nil` for the Playbook, which always does.
+    let groupedSnapshots: Bool?
 
-    let declaredOutputs: [Path]
-
-    init?(declaredOutputs: [String]) {
-        guard !declaredOutputs.isEmpty else { return nil }
-        self.declaredOutputs = declaredOutputs.map { Path($0) }
+    /// - Parameter variables: `NAME=VALUE` pairs.
+    init?(isPluginRun: Bool, variables: [String], groupedSnapshots: Bool? = nil) throws {
+        guard isPluginRun else { return nil }
+        self.variables = try Dictionary(variables.map { pair in
+            guard let separator = pair.firstIndex(of: "=") else {
+                throw ValidationError("A plugin variable is NAME=VALUE, not '\(pair)'.")
+            }
+            return (String(pair[..<separator]), String(pair[pair.index(after: separator)...]))
+        }, uniquingKeysWith: { _, last in last })
+        self.groupedSnapshots = groupedSnapshots
     }
 
     /// The variables to replace in `.prefire.yml` for `run`.
     static func environment(for run: PluginRun?) -> [String: String] {
-        let environment = ProcessInfo.processInfo.environment
-        guard run != nil else { return environment }
-        return environment.filter { variables.contains($0.key) }
+        run?.variables ?? ProcessInfo.processInfo.environment
     }
 }
+#endif

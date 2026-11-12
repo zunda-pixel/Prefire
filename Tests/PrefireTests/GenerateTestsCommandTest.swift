@@ -139,16 +139,18 @@ class GenerateTestsCommandTests: XCTestCase {
         }
     }
 
-    func test_declaredOutputsIgnoreTestFilePath() throws {
+    func test_pluginRunTakesThePluginsChoices() throws {
         var config = Config()
-        config.tests.testFilePath = "User/Tests/Custom.generated.swift"
+        config.tests.testFilePath = "User/Tests"
+        config.tests.sources = ["User/Sources"]
+        config.tests.useGroupedSnapshots = true
 
-        func output(pluginRun: PluginRun?) throws -> Path {
+        func options(pluginRun: PluginRun?) throws -> GeneratedTestsOptions {
             try GeneratedTestsOptions(
                 target: nil,
                 testTarget: nil,
                 template: nil,
-                sources: [],
+                sources: ["Plugin/Sources/Badge.swift", "Plugin/Sources/Plain.swift"],
                 output: "Plugin/Generated",
                 testTargetPath: nil,
                 cacheBasePath: nil,
@@ -156,10 +158,27 @@ class GenerateTestsCommandTests: XCTestCase {
                 osVersion: nil,
                 config: config,
                 pluginRun: pluginRun
-            ).output
+            )
         }
 
-        XCTAssertEqual(try output(pluginRun: nil), "User/Tests/Custom.generated.swift")
-        XCTAssertEqual(try output(pluginRun: PluginRun(declaredOutputs: ["Plugin/Generated/PreviewTests.generated.swift"])), "Plugin/Generated")
+        let cli = try options(pluginRun: nil)
+        XCTAssertEqual(cli.output, "User/Tests")
+        XCTAssertEqual(cli.sources, ["User/Sources"])
+        XCTAssertTrue(cli.useGroupedSnapshots)
+
+        let plugin = try options(pluginRun: PluginRun(isPluginRun: true, variables: ["PACKAGE_DIR=/Package"], groupedSnapshots: false))
+        XCTAssertEqual(plugin.output, "Plugin/Generated")
+        XCTAssertEqual(plugin.sources, ["Plugin/Sources/Badge.swift", "Plugin/Sources/Plain.swift"])
+        XCTAssertFalse(plugin.useGroupedSnapshots)
+        XCTAssertEqual(plugin.pluginRun?.variables, ["PACKAGE_DIR": "/Package"])
+        XCTAssertEqual(
+            GenerateTestsCommand.declaredOutputs(for: plugin, output: "Plugin/Generated/{PREVIEW_FILE_NAME}Tests.generated.swift"),
+            ["Plugin/Generated/BadgeTests.generated.swift", "Plugin/Generated/PlainTests.generated.swift"]
+        )
+    }
+
+    func test_pluginVariableNeedsAValue() {
+        XCTAssertThrowsError(try PluginRun(isPluginRun: true, variables: ["PACKAGE_DIR"]))
+        XCTAssertNil(try PluginRun(isPluginRun: false, variables: ["PACKAGE_DIR=/Package"]))
     }
 }

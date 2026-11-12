@@ -26,7 +26,8 @@ struct PrefireCacheManager {
         parse: (Path) throws -> ParsedSource
     ) throws -> (types: [ParsedType], previews: [String: RawPreviewModel]) {
         let dir = Path.cachesDir(sourcePath: sources.first ?? .current, basePath: cacheBasePath)
-        let cacheFile = dir + "\(version)-sources.json"
+        // A file per `defaultEnabled`, so `prefire tests` and `prefire playbook` with different values keep theirs.
+        let cacheFile = dir + "\(version)-\(defaultEnabled ? "default-enabled" : "default-disabled")-sources.json"
 
         var cached: [String: CacheEntry] = [:]
         if cacheFile.exists {
@@ -37,18 +38,18 @@ struct PrefireCacheManager {
             }
         }
 
-        var entries: [String: CacheEntry] = [:]
-        var parsedSources: [ParsedSource] = []
+        // Entries of other runs stay while their file exists: runs on other sources share this file.
+        var entries = cached.filter { FileManager.default.fileExists(atPath: $0.key) }
+        var parsedSources: [(path: Path, source: ParsedSource)] = []
         var parsedCount = 0
         for source in sources {
             let stamp = FileStamp(source)
-            if let entry = cached[source.string], entry.stamp == stamp, entry.defaultEnabled == defaultEnabled {
-                entries[source.string] = entry
-                parsedSources.append(entry.source)
+            if let entry = cached[source.string], entry.stamp == stamp {
+                parsedSources.append((source, entry.source))
             } else {
                 let parsed = try parse(source)
-                entries[source.string] = CacheEntry(stamp: stamp, defaultEnabled: defaultEnabled, source: parsed)
-                parsedSources.append(parsed)
+                entries[source.string] = CacheEntry(stamp: stamp, source: parsed)
+                parsedSources.append((source, parsed))
                 parsedCount += 1
             }
         }
@@ -59,27 +60,36 @@ struct PrefireCacheManager {
             try JSONEncoder().encode(entries).write(to: cacheFile.url, options: .atomic)
         }
 
+        // Previews are keyed by file name: the first source with a name keeps them.
         var previews: [String: RawPreviewModel] = [:]
-        for source in parsedSources {
+        var keySources: [String: Path] = [:]
+        for (path, source) in parsedSources {
+            let taken = source.previews.keys.compactMap { key in keySources[key].map { (key, $0) } }
+            if let (_, other) = taken.first {
+                // "warning:" makes Xcode and SwiftPM show it as a build warning.
+                Logger.warning("warning: Prefire skips the previews of \(path), because \(other) has the same file name.")
+                continue
+            }
+            for key in source.previews.keys { keySources[key] = path }
             previews.merge(source.previews) { current, _ in current }
         }
-        return (TypeScanner.merge(parsedSources.map(\.types)), previews)
+        return (TypeScanner.merge(parsedSources.map(\.source.types)), previews)
     }
 }
 
 private struct CacheEntry: Codable {
     var stamp: FileStamp
-    var defaultEnabled: Bool
     var source: ParsedSource
 }
 
-/// When a file was last changed, and its size.
+/// When a file was last changed, and its size. A symbolic link stamps the file it points to.
 private struct FileStamp: Codable, Equatable {
     var modificationDate: Double?
     var size: UInt64?
 
     init(_ path: Path) {
-        let attributes = try? FileManager.default.attributesOfItem(atPath: path.string)
+        let resolved = URL(fileURLWithPath: path.string).resolvingSymlinksInPath().path
+        let attributes = try? FileManager.default.attributesOfItem(atPath: resolved)
         modificationDate = (attributes?[.modificationDate] as? Date)?.timeIntervalSince1970
         size = (attributes?[.size] as? NSNumber)?.uint64Value
     }

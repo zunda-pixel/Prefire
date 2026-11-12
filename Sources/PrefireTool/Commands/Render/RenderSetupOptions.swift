@@ -1,3 +1,4 @@
+#if os(macOS)
 @preconcurrency import ArgumentParser
 import Foundation
 import PrefireCore
@@ -77,3 +78,4 @@ struct RenderSetupOptions: ParsableArguments {
         )
     }
 }
+#endif

@@ -1,3 +1,4 @@
+#if os(macOS)
 @preconcurrency import ArgumentParser
 import Foundation
 import PrefireCore
@@ -25,3 +26,4 @@ extension Prefire {
         }
     }
 }
+#endif

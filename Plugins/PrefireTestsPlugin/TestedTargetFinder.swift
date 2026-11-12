@@ -5,27 +5,44 @@ enum TestedTargetFinder {
     /// Search for testedTarget
     /// - Parameters:
     ///   - target: Test target
-    ///   - name: The `target` of `.prefire.yml`, if any
+    ///   - packageDirectory: Directory of the package, where `prefire` looks for `.prefire.yml` last
+    ///   - environment: The variables the plugin replaces in `.prefire.yml`
     /// - Returns: Tested Target object
-    static func findTestedTarget(for target: Target, named name: String?) throws -> SwiftSourceModuleTarget? {
+    static func findTestedTarget(for target: Target, packageDirectory: URL, environment: [String: String]) throws -> SwiftSourceModuleTarget? {
         let swiftTarget = target as? SwiftSourceModuleTarget
 
         guard swiftTarget?.kind == .test else {
             throw NSError(domain: "`PrefireTestsPlugin` must be connected to the test target. \(target.name) is not a test target.", code: 0)
         }
 
-        let targetDependencies = swiftTarget?.dependencies
+        let targetDependencies: [SwiftSourceModuleTarget] = swiftTarget?.dependencies
             .compactMap { dependency in
                 if case let .target(target) = dependency {
                     return target as? SwiftSourceModuleTarget
                 } else {
                     return nil
                 }
-            }
+            } ?? []
+
+        func configuredName(in directory: URL) -> String? {
+            PrefireConfigFile.first(in: [directory])?.value(of: "target", in: "test_configuration", environment: environment)
+        }
+
+        // `prefire` reads `target` from the first `.prefire.yml` of the test target, the tested target and the
+        // package. The tested target is what this looks for, so a dependency counts when its own names it.
+        let testTargetURL = URL(filePath: String(describing: target.directory))
+        let name: String?
+        if PrefireConfigFile.first(in: [testTargetURL]) != nil {
+            name = configuredName(in: testTargetURL)
+        } else if let dependency = targetDependencies.first(where: { configuredName(in: $0.directoryURL) == $0.name }) {
+            return dependency
+        } else {
+            name = configuredName(in: packageDirectory)
+        }
 
         let targetName = name ?? target.name.replacingOccurrences(of: "Tests", with: "")
 
-        return targetDependencies?.first(where: { $0.name == targetName }) ?? targetDependencies?.first(where: { $0.kind == .generic })
+        return targetDependencies.first(where: { $0.name == targetName }) ?? targetDependencies.first(where: { $0.kind == .generic })
     }
 }
 

@@ -1,3 +1,4 @@
+#if os(macOS)
 import Foundation
 
 enum ConfigPathBuilder {
@@ -46,3 +47,4 @@ enum ConfigPathBuilder {
         return possibleConfigPaths
     }
 }
+#endif

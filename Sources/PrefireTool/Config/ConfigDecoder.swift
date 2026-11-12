@@ -1,3 +1,4 @@
+#if os(macOS)
 import Foundation
 import PrefireCore
 
@@ -262,3 +263,4 @@ private extension String {
         return components(separatedBy: "${").last?.components(separatedBy: "}").first
     }
 }
+#endif

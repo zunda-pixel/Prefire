@@ -20,7 +20,7 @@ struct SimulatorDevice: Equatable, Sendable {
 /// most of the time of a render.
 struct SimulatorTestLauncher {
     /// Simulators `simctl` manages by default.
-    static let defaultDeviceSet = FileManager.default.homeDirectoryForCurrentUser
+    static let defaultDeviceSet = URL(fileURLWithPath: NSHomeDirectory())
         .appendingPathComponent("Library/Developer/CoreSimulator/Devices", isDirectory: true)
 
     let runner: any ProcessRunning

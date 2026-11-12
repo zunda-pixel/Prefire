@@ -1,3 +1,4 @@
+#if os(macOS)
 import Foundation
 import PrefireCore
 import PathKit
@@ -64,7 +65,7 @@ enum GeneratePlaybookCommand {
             defaultEnabled: options.previewDefaultEnabled,
             cacheDir: options.cacheBasePath,
             useGroupedSnapshots: true, // Playbooks are always grouped
-            declaredOutputs: options.pluginRun?.declaredOutputs
+            declaredOutputs: options.pluginRun.map { _ in [options.output] }
         )
     }
 
@@ -84,3 +85,4 @@ enum GeneratePlaybookCommand {
         ].filter({ $0.value != nil }) as? [String: NSObject] ?? [:]
     }
 }
+#endif

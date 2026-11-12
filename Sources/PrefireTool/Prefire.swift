@@ -1,3 +1,4 @@
+#if os(macOS)
 @preconcurrency import ArgumentParser
 import Foundation
 
@@ -17,3 +18,10 @@ struct Prefire: AsyncParsableCommand {
         ]
     )
 }
+#else
+/// The CLI runs on the Mac, where the plugins build it. The package also builds for iOS: nothing to do there.
+@main
+enum Prefire {
+    static func main() {}
+}
+#endif

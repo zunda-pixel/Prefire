@@ -1,3 +1,4 @@
+#if os(macOS)
 import Foundation
 import PrefireCore
 
@@ -134,3 +135,4 @@ extension Config {
         return nil
     }
 }
+#endif
