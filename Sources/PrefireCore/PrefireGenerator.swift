@@ -28,43 +28,30 @@ public enum PrefireGenerator {
         }
 
         guard !discovered.isEmpty else {
-            Logger.info("No Swift sources found to process.")
+            if declaredOutputs != nil {
+                // "warning:" makes Xcode and SwiftPM show it as a build warning.
+                Logger.warning("warning: Prefire found no Swift sources in \(sources.map(\.string).joined(separator: ", ")), so the generated files have no previews.")
+            } else {
+                Logger.info("No Swift sources found to process.")
+            }
             try writer.writeUnwrittenDeclaredOutputs()
             return
         }
 
         // Sorted so the order of the generated declarations does not depend on set iteration order.
         let swiftFiles = discovered.sorted { $0.string < $1.string }
-        let fileContents: [(Path, String)] = try swiftFiles.map { ($0, try $0.read(.utf8)) }
 
         // If use grouped is false, we geneate one file per tests
         // and use the template as output replacing the "{PREVIEW_FILE_NAME}" with the name of the file
 
         let manager = PrefireCacheManager(version: version, cacheBasePath: cacheDir)
-        let (types, previews) = try await manager.loadOrGenerate(
-            sources: fileContents.map { $0.0 },
-            template: inlineTemplate,
-            defaultEnabled: defaultEnabled,
-            parseTypes: {
-                Logger.info("🧩 Parsing Swift files...")
-                return TypeScanner.merge(fileContents.map { TypeScanner.scan(contents: $0.1) })
-            },
-            parsePreviews: {
-                Logger.info("🔍 Extracting #Preview bodies...")
-                var result: [String: RawPreviewModel] = [:]
-                for (path, content) in fileContents {
-                    guard content.contains("#Preview") else { continue }
-                    if let models = PreviewLoader.previewModels(
-                        from: content,
-                        filename: path.lastComponentWithoutExtension,
-                        defaultEnabled: defaultEnabled
-                    ) {
-                        result.merge(models) { current, _ in current }
-                    }
-                }
-                return result
-            }
-        )
+        let (types, previews) = try manager.load(sources: swiftFiles, defaultEnabled: defaultEnabled) { path in
+            let content = try path.read(.utf8)
+            let previews = content.contains("#Preview")
+                ? PreviewLoader.previewModels(from: content, filename: path.lastComponentWithoutExtension, defaultEnabled: defaultEnabled)
+                : nil
+            return ParsedSource(types: TypeScanner.scan(contents: content), previews: previews ?? [:])
+        }
 
         let previewModels = previews
             .sorted { $0.key > $1.key }

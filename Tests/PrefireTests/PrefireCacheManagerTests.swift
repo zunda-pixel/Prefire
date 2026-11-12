@@ -4,86 +4,73 @@ import PathKit
 @testable import PrefireCore
 
 final class PrefireCacheManagerTests: XCTestCase {
+    private var directory: Path!
 
-    func testCacheManagerPersistsAndReloads() async throws {
-        let tmp = Path("/tmp/cache_test/\(UUID().uuidString)")
-        try tmp.mkpath()
+    override func setUpWithError() throws {
+        directory = Path(NSTemporaryDirectory()) + "PrefireCacheManagerTests-\(UUID().uuidString)"
+        try directory.mkpath()
+    }
 
-        let file = tmp + "Example.swift"
-        try file.write("""
-        struct Example {}
-        #Preview {
-            Text("Hello")
+    override func tearDownWithError() throws {
+        try? directory.delete()
+    }
+
+    private func parse(_ path: Path, defaultEnabled: Bool = true) throws -> ParsedSource {
+        let content = try path.read(.utf8)
+        return ParsedSource(
+            types: TypeScanner.scan(contents: content),
+            previews: PreviewLoader.previewModels(from: content, filename: path.lastComponent, defaultEnabled: defaultEnabled) ?? [:]
+        )
+    }
+
+    func testParsesOnlyTheFilesThatChanged() throws {
+        let first = directory + "First.swift"
+        let second = directory + "Second.swift"
+        try first.write("struct First {}\n#Preview {\n    Text(\"First\")\n}\n")
+        try second.write("struct Second {}\n#Preview {\n    Text(\"Second\")\n}\n")
+        let manager = PrefireCacheManager(version: "test-1", cacheBasePath: directory + "Cache")
+
+        var parsed: [String] = []
+        func load() throws -> (types: [ParsedType], previews: [String: RawPreviewModel]) {
+            try manager.load(sources: [first, second], defaultEnabled: true) { path in
+                parsed.append(path.lastComponent)
+                return try parse(path)
+            }
         }
-        """)
 
-        let template = "ABC"
-        let manager = PrefireCacheManager(version: "test-1", cacheBasePath: tmp)
+        let initial = try load()
+        XCTAssertEqual(parsed, ["First.swift", "Second.swift"])
+        XCTAssertEqual(initial.types.map(\.name), ["First", "Second"])
+        XCTAssertEqual(initial.previews["First.swift_0"]?.body, "Text(\"First\")")
 
-        var parsed = false
-        var previewsParsed = false
+        parsed = []
+        let cached = try load()
+        XCTAssertEqual(parsed, [])
+        XCTAssertEqual(cached.types, initial.types)
+        XCTAssertEqual(cached.previews, initial.previews)
 
-        // First parse (generates cache)
-        let (firstTypes, firstPreviews) = try await manager.loadOrGenerate(
-            sources: [file],
-            template: template,
-            defaultEnabled: true,
-            parseTypes: {
-                parsed = true
-                return [ParsedType(name: "Example", kind: .struct)]
-            },
-            parsePreviews: {
-                previewsParsed = true
-                return PreviewLoader.previewModels(from: try file.read(.utf8), filename: "Example", defaultEnabled: true) ?? [:]
-            }
-        )
+        try second.write("struct Second {}\n#Preview {\n    Text(\"Changed\")\n}\n")
+        parsed = []
+        let updated = try load()
+        XCTAssertEqual(parsed, ["Second.swift"])
+        XCTAssertEqual(updated.previews["First.swift_0"]?.body, "Text(\"First\")")
+        XCTAssertEqual(updated.previews["Second.swift_0"]?.body, "Text(\"Changed\")")
+    }
 
-        XCTAssertTrue(parsed)
-        XCTAssertTrue(previewsParsed)
-        XCTAssertEqual(firstPreviews["Example_0"]?.body, "Text(\"Hello\")")
+    func testParsesAgainWithAnotherDefaultEnabled() throws {
+        let file = directory + "Example.swift"
+        try file.write("#Preview {\n    Text(\"Hello\")\n}\n")
+        let manager = PrefireCacheManager(version: "test-1", cacheBasePath: directory + "Cache")
 
-        parsed = false
-        previewsParsed = false
+        let enabled = try manager.load(sources: [file], defaultEnabled: true) { try parse($0, defaultEnabled: true) }
+        var parsedAgain = false
+        let disabled = try manager.load(sources: [file], defaultEnabled: false) { path in
+            parsedAgain = true
+            return try parse(path, defaultEnabled: false)
+        }
 
-        // Second parse (should use cache)
-        let (cachedTypes, cachedPreviews) = try await manager.loadOrGenerate(
-            sources: [file],
-            template: template,
-            defaultEnabled: true,
-            parseTypes: {
-                XCTFail("Should not re-parse types if cache is valid")
-                return []
-            },
-            parsePreviews: {
-                XCTFail("Should not re-parse previews if cache is valid")
-                return [:]
-            }
-        )
-
-        XCTAssertEqual(cachedPreviews, firstPreviews)
-        XCTAssertEqual(cachedTypes, firstTypes)
-        XCTAssertEqual(cachedTypes.first?.name, "Example")
-
-        // Touch the file (simulate source change)
-        try file.write(try file.read(), encoding: .utf8)
-
-        let (updatedTypes, updatedPreviews) = try await manager.loadOrGenerate(
-            sources: [file],
-            template: template,
-            defaultEnabled: true,
-            parseTypes: {
-                []
-            },
-            parsePreviews: {
-                PreviewLoader.previewModels(from: """
-                #Preview {
-                    Text("Updated")
-                }
-                """, filename: "Example", defaultEnabled: true) ?? [:]
-            }
-        )
-
-        XCTAssertEqual(updatedPreviews["Example_0"]?.body, "Text(\"Updated\")")
-        XCTAssertTrue(updatedTypes.isEmpty)
+        XCTAssertTrue(parsedAgain)
+        XCTAssertEqual(enabled.previews.count, 1)
+        XCTAssertEqual(disabled.previews.count, 0)
     }
 }

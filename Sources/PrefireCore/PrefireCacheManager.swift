@@ -2,6 +2,13 @@ import Foundation
 import CryptoKit
 import PathKit
 
+/// The types and previews of one source file.
+struct ParsedSource: Codable, Equatable {
+    var types: [ParsedType]
+    var previews: [String: RawPreviewModel]
+}
+
+/// Keeps what each source file parsed to, so a run parses only the files that changed since the last one.
 struct PrefireCacheManager {
     private let version: String
     private let cacheBasePath: Path?
@@ -11,86 +18,74 @@ struct PrefireCacheManager {
         self.cacheBasePath = cacheBasePath
     }
 
-    func loadOrGenerate(
+    /// The types and previews of `sources`, merged in their order. `parse` runs for the files that aren't in
+    /// the cache, or that changed or were parsed with another `defaultEnabled` since.
+    func load(
         sources: [Path],
-        template: String,
         defaultEnabled: Bool,
-        parseTypes: () throws -> [ParsedType],
-        parsePreviews: () async throws -> [String: RawPreviewModel]
-    ) async throws -> (types: [ParsedType], previews: [String: RawPreviewModel]) {
-        let key = fingerprint(for: sources, extra: template + "\ndefault-enabled-\(defaultEnabled)\npreview-model-cache-v3")
+        parse: (Path) throws -> ParsedSource
+    ) throws -> (types: [ParsedType], previews: [String: RawPreviewModel]) {
         let dir = Path.cachesDir(sourcePath: sources.first ?? .current, basePath: cacheBasePath)
-        let typesFile = dir + "\(version)-\(key).types.json"
-        let previewsFile = dir + "\(version)-\(key).previews.json"
+        let cacheFile = dir + "\(version)-sources.json"
 
-        var types: [ParsedType]?
-        var previews: [String: RawPreviewModel]?
-
-        if typesFile.exists {
+        var cached: [String: CacheEntry] = [:]
+        if cacheFile.exists {
             do {
-                let data = try Data(contentsOf: typesFile.url)
-                types = try JSONDecoder().decode([ParsedType].self, from: data)
+                cached = try JSONDecoder().decode([String: CacheEntry].self, from: Data(contentsOf: cacheFile.url))
             } catch {
-                Logger.warning("⚠️ Failed to read Types cache: \(error)")
+                Logger.warning("⚠️ Failed to read the parse cache: \(error)")
             }
         }
 
-        if previewsFile.exists {
-            do {
-                let data = try Data(contentsOf: previewsFile.url)
-                previews = try JSONDecoder().decode([String: RawPreviewModel].self, from: data)
-            } catch {
-                Logger.warning("⚠️ Failed to read Previews cache: \(error)")
+        var entries: [String: CacheEntry] = [:]
+        var parsedSources: [ParsedSource] = []
+        var parsedCount = 0
+        for source in sources {
+            let stamp = FileStamp(source)
+            if let entry = cached[source.string], entry.stamp == stamp, entry.defaultEnabled == defaultEnabled {
+                entries[source.string] = entry
+                parsedSources.append(entry.source)
+            } else {
+                let parsed = try parse(source)
+                entries[source.string] = CacheEntry(stamp: stamp, defaultEnabled: defaultEnabled, source: parsed)
+                parsedSources.append(parsed)
+                parsedCount += 1
             }
         }
+        Logger.info("🧩 Parsed \(parsedCount) of \(sources.count) Swift files, the others came from the cache.")
 
-        let cacheStamp = typesFile.lastModification
-        let isCacheFresh = cacheStamp != nil && sources.allSatisfy {
-            ($0.lastModification ?? .distantPast) <= cacheStamp!
+        if parsedCount > 0 || entries.count != cached.count {
+            try dir.mkpath()
+            try JSONEncoder().encode(entries).write(to: cacheFile.url, options: .atomic)
         }
 
-        if let types, let previews, isCacheFresh {
-            Logger.info("✅ Loaded types and previews from fresh cache.")
-            return (types, previews)
-        } else {
-            Logger.info("♻️ Cache expired or missing. Regenerating…")
+        var previews: [String: RawPreviewModel] = [:]
+        for source in parsedSources {
+            previews.merge(source.previews) { current, _ in current }
         }
-
-        let freshTypes = try parseTypes()
-        let freshPreviews = try await parsePreviews()
-
-        let tData = try JSONEncoder().encode(freshTypes)
-        let pData = try JSONEncoder().encode(freshPreviews)
-
-        try typesFile.parent().mkpath()
-        try tData.write(to: typesFile.url)
-        try pData.write(to: previewsFile.url)
-
-        Logger.info("💾 Cache written: types and previews.")
-
-        return (freshTypes, freshPreviews)
+        return (TypeScanner.merge(parsedSources.map(\.types)), previews)
     }
+}
 
-    private func fingerprint(for sources: [Path], extra: String) -> String {
-        var hasher = SHA256()
-        for file in sources.sorted(by: { $0.string < $1.string }) {
-            hasher.update(data: Data(file.string.utf8))
-            hasher.update(with: file.lastModification ?? .distantPast)
-        }
-        hasher.update(data: Data(extra.utf8))
-        return hasher.finalize().hexString
+private struct CacheEntry: Codable {
+    var stamp: FileStamp
+    var defaultEnabled: Bool
+    var source: ParsedSource
+}
+
+/// When a file was last changed, and its size.
+private struct FileStamp: Codable, Equatable {
+    var modificationDate: Double?
+    var size: UInt64?
+
+    init(_ path: Path) {
+        let attributes = try? FileManager.default.attributesOfItem(atPath: path.string)
+        modificationDate = (attributes?[.modificationDate] as? Date)?.timeIntervalSince1970
+        size = (attributes?[.size] as? NSNumber)?.uint64Value
     }
 }
 
 // MARK: - Extensions
-
-private extension SHA256 {
-    mutating func update(with date: Date) {
-        withUnsafeBytes(of: date.timeIntervalSince1970.bitPattern) {
-            update(data: Data($0))
-        }
-    }
-}
 
 private extension Digest {
     var hexString: String {
@@ -114,10 +109,6 @@ extension Path {
         let dir = root + sourcePath.absolute().sha256prefix(8)
         if createIfMissing, !dir.exists { try? dir.mkpath() }
         return dir
-    }
-
-    fileprivate var lastModification: Date? {
-        (try? FileManager.default.attributesOfItem(atPath: string)[.modificationDate]) as? Date
     }
 
     fileprivate func sha256prefix(_ length: Int) -> String {
