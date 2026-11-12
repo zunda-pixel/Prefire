@@ -172,14 +172,14 @@ update: ## Bump version and build the CLI binary (make update version=x.y.z)
 	sed -i '' 's/static let value: String = "[^"]*"/static let value: String = "$(version)"/' "$(VERSION_FILE)"
 	$(MAKE) binary
 
-archive: ## Pack the CLI binary into prefire.tar.gz
+archive: binary ## Pack the CLI binary into prefire.tar.gz
 	$(call require-version)
 	rm -rf "$(ARCHIVE_STAGE)"
 	mkdir -p "$(ARCHIVE_STAGE)"
 	cp "$(BINARY)" "$(ARCHIVE_STAGE)/prefire"
 	tar -czf prefire.tar.gz -C "$(ARCHIVE_STAGE)" prefire
 
-mcpb: ## Pack the CLI binary into prefire-mcp-<version>.mcpb and point server.json at it (needs Node)
+mcpb: binary ## Pack the CLI binary into prefire-mcp-<version>.mcpb and point server.json at it (needs Node)
 	$(call require-version)
 	rm -rf "$(MCPB_STAGE)"
 	mkdir -p "$(MCPB_STAGE)/server"

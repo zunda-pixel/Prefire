@@ -178,7 +178,7 @@ Key blocks worth studying:
   ```stencil
   @MainActor class {PREVIEW_FILE_NAME}Tests: XCTestCase {
   ```
-  When `use_grouped_snapshots: false`, Prefire replaces `{PREVIEW_FILE_NAME}` in **both** the output path and the template body with the source-file name before rendering. The same placeholder is also valid in `test_file_path`.
+  When `use_grouped_snapshots: false`, Prefire replaces `{PREVIEW_FILE_NAME}` in **both** the output path and the template body with the source-file name before rendering.
 - **`snapshotDevices` array** — the config stores a pipe-joined string; the template splits it back into a Swift array:
   ```stencil
   {% if argument.snapshotDevices %}
@@ -372,7 +372,7 @@ import SnapshotTesting
 ## 7. Caveats and tips
 
 - **Required imports** are not auto-added. For tests you almost always need `XCTest`, `SwiftUI`, `Prefire`, and `SnapshotTesting`; for playbook you need `SwiftUI` and `Prefire`. Add them at the top of your template literally.
-- **`{PREVIEW_FILE_NAME}` is a real placeholder.** It is replaced in the template string *and* in `test_file_path` *only* when `use_grouped_snapshots: false`. The class declared in your template must be named `{PREVIEW_FILE_NAME}Tests`, otherwise the generated file won't compile.
+- **`{PREVIEW_FILE_NAME}` is a real placeholder.** It is replaced in the template string *and* in the generated file name *only* when `use_grouped_snapshots: false`. The class declared in your template must be named `{PREVIEW_FILE_NAME}Tests`, otherwise the generated file won't compile.
 - **`snapshotDevices` is a pipe-joined string**, not an array. Use `|split:"|"`. Forgetting the filter produces `devices: iPhone 14|iPad` in the generated file.
 - **Guard `previewsMacrosDict`.** An empty array will still produce a (broken) `for` block. Always wrap the macro loop in `{% if argument.previewsMacrosDict %}`.
 - **Cache invalidation.** `PrefireCacheManager` keys the cache on source content. When you change a template, delete `~/.prefire-cache/` to force a full re-render.

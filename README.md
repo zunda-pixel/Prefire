@@ -129,6 +129,7 @@ Step-by-step setup is in the [Installation guide](Documentation/Installation.md)
 - Swift 6.0 or higher
 - Xcode 16.0 or higher
 - iOS 14 or higher; macOS 13 or higher (macOS: snapshot tests only, see [Configuration](Documentation/Configuration.md#macos-snapshot-tests))
+- swift-syntax 600 to 604 in your package resolution. The plugins build Prefire's generator, so its dependencies resolve with your app: swift-syntax, Stencil, StencilSwiftKit (with Komondor, PackageConfig and ShellOut), PathKit and swift-argument-parser. An app that pins swift-syntax below 600 can't update to this version
 
 ---
 

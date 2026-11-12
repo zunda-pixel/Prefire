@@ -49,7 +49,7 @@ let package = Package(
             ]
         ),
         .testTarget(
-            name: "PrefireCLITests",
+            name: "PrefireLibraryTests",
             dependencies: ["Prefire"]
         ),
         .testTarget(
