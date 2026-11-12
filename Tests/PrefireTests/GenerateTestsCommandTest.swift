@@ -1,0 +1,184 @@
+import Foundation
+@testable import PrefireTool
+import XCTest
+import PathKit
+
+class GenerateTestsCommandTests: XCTestCase {
+    var options: GeneratedTestsOptions!
+
+    override func setUp() {
+        super.setUp()
+        options = try? GeneratedTestsOptions(
+            target: "GenerateTestsCommand",
+            testTarget: "GenerateTestsCommandTests",
+            template: nil,
+            sources: [],
+            output: "User/Tests/PreviewTests.generated.swift",
+            testTargetPath: "User/Tests",
+            cacheBasePath: nil,
+            device: nil,
+            osVersion: nil,
+            config: nil
+        )
+    }
+
+    func test_makeArguments_sources() async {
+        options.sources = ["some/sources"]
+        let expectedArguments = [
+            "mainTarget": options.target! as NSString,
+            "file": options.testTargetPath.flatMap({ $0 + "PreviewTests.generated.swift"})!.string as NSString,
+        ] as [String: NSObject]
+
+        let arguments = await GenerateTestsCommand.makeArguments(for: options)
+
+        XCTAssertEqual(YAMLParser().string(from: arguments), YAMLParser().string(from: expectedArguments))
+    }
+    
+    func test_makeArguments_snapshot_devices() async {
+        options.snapshotDevices = ["iPhone 15", "iPad"]
+        options.sources = ["some/sources", "some/other/sources"]
+
+        let expectedArguments = [
+            "mainTarget": "\(options.target ?? "")" as NSString,
+            "file": options.testTargetPath.flatMap({ $0 + "PreviewTests.generated.swift"})!.string as NSString,
+            "snapshotDevices": "iPhone 15|iPad" as NSString,
+        ] as [String: NSObject]
+
+        let arguments = await GenerateTestsCommand.makeArguments(for: options)
+
+        XCTAssertEqual(YAMLParser().string(from: arguments), YAMLParser().string(from: expectedArguments))
+    }
+    
+    func test_makeArguments_split_snapshot_directories_uses_templated_file_name() async {
+        options.useGroupedSnapshots = false
+        options.splitSnapshotDirectories = true
+
+        let expectedArguments = [
+            "mainTarget": "\(options.target ?? "")" as NSString,
+            "file": options.testTargetPath.flatMap({ $0 + "{PREVIEW_FILE_NAME}Tests.generated.swift" })!.string as NSString,
+        ] as [String: NSObject]
+
+        let arguments = await GenerateTestsCommand.makeArguments(for: options)
+
+        XCTAssertEqual(YAMLParser().string(from: arguments), YAMLParser().string(from: expectedArguments))
+    }
+
+    func test_makeArguments_ungrouped_without_split_keeps_legacy_file_name() async {
+        options.useGroupedSnapshots = false
+        options.splitSnapshotDirectories = false
+
+        let expectedArguments = [
+            "mainTarget": "\(options.target ?? "")" as NSString,
+            "file": options.testTargetPath.flatMap({ $0 + "PreviewTests.generated.swift" })!.string as NSString,
+        ] as [String: NSObject]
+
+        let arguments = await GenerateTestsCommand.makeArguments(for: options)
+
+        XCTAssertEqual(YAMLParser().string(from: arguments), YAMLParser().string(from: expectedArguments))
+    }
+
+    func test_makeArguments_snapshot_wait() async {
+        options.snapshotWaitForIdle = true
+        options.snapshotWaitTimeout = 2.5
+
+        let expectedArguments = [
+            "mainTarget": "\(options.target ?? "")" as NSString,
+            "file": options.testTargetPath.flatMap({ $0 + "PreviewTests.generated.swift"})!.string as NSString,
+            "snapshotWaitForIdle": "true" as NSString,
+            "snapshotWaitTimeout": "2.5" as NSString,
+        ] as [String: NSObject]
+
+        let arguments = await GenerateTestsCommand.makeArguments(for: options)
+
+        XCTAssertEqual(YAMLParser().string(from: arguments), YAMLParser().string(from: expectedArguments))
+    }
+
+    func test_makeArguments_drawHierarchyInKeyWindowDefaultEnabled() async {
+        options.drawHierarchyInKeyWindowDefaultEnabled = true
+
+        let expectedArguments = [
+            "mainTarget": "\(options.target ?? "")" as NSString,
+            "file": options.testTargetPath.flatMap({ $0 + "PreviewTests.generated.swift"})!.string as NSString,
+            "drawHierarchyInKeyWindowDefaultEnabled": "true" as NSString,
+        ] as [String: NSObject]
+
+        let arguments = await GenerateTestsCommand.makeArguments(for: options)
+
+        XCTAssertEqual(YAMLParser().string(from: arguments), YAMLParser().string(from: expectedArguments))
+    }
+
+    func test_makeArguments_fullPageSnapshots() async {
+        options.fullPageSnapshots = true
+
+        let expectedArguments = [
+            "mainTarget": "\(options.target ?? "")" as NSString,
+            "file": options.testTargetPath.flatMap({ $0 + "PreviewTests.generated.swift"})!.string as NSString,
+            "fullPageSnapshots": "true" as NSString,
+        ] as [String: NSObject]
+
+        let arguments = await GenerateTestsCommand.makeArguments(for: options)
+
+        XCTAssertEqual(YAMLParser().string(from: arguments), YAMLParser().string(from: expectedArguments))
+    }
+
+    func test_makeArguments_voiceOverSnapshots() async {
+        let file = options.testTargetPath.flatMap({ $0 + "PreviewTests.generated.swift"})!.string as NSString
+
+        for (strategies, argument) in [(["image", "text"], "image|text"), ([], "none")] {
+            options.voiceOverSnapshots = strategies
+
+            let expectedArguments = [
+                "mainTarget": "\(options.target ?? "")" as NSString,
+                "file": file,
+                "voiceOverSnapshots": argument as NSString
+            ] as [String: NSObject]
+
+            let arguments = await GenerateTestsCommand.makeArguments(for: options)
+
+            XCTAssertEqual(YAMLParser().string(from: arguments), YAMLParser().string(from: expectedArguments))
+        }
+    }
+
+    func test_pluginRunTakesThePluginsChoices() throws {
+        var config = Config()
+        config.tests.testFilePath = "User/Tests"
+        config.tests.sources = ["User/Sources"]
+        config.tests.useGroupedSnapshots = true
+
+        func options(pluginRun: PluginRun?) throws -> GeneratedTestsOptions {
+            try GeneratedTestsOptions(
+                target: nil,
+                testTarget: nil,
+                template: nil,
+                sources: ["Plugin/Sources/Badge.swift", "Plugin/Sources/Plain.swift"],
+                output: "Plugin/Generated",
+                testTargetPath: nil,
+                cacheBasePath: nil,
+                device: nil,
+                osVersion: nil,
+                config: config,
+                pluginRun: pluginRun
+            )
+        }
+
+        let cli = try options(pluginRun: nil)
+        XCTAssertEqual(cli.output, "User/Tests")
+        XCTAssertEqual(cli.sources, ["User/Sources"])
+        XCTAssertTrue(cli.useGroupedSnapshots)
+
+        let plugin = try options(pluginRun: PluginRun(isPluginRun: true, variables: ["PACKAGE_DIR=/Package"], groupedSnapshots: false))
+        XCTAssertEqual(plugin.output, "Plugin/Generated")
+        XCTAssertEqual(plugin.sources, ["Plugin/Sources/Badge.swift", "Plugin/Sources/Plain.swift"])
+        XCTAssertFalse(plugin.useGroupedSnapshots)
+        XCTAssertEqual(plugin.pluginRun?.variables, ["PACKAGE_DIR": "/Package"])
+        XCTAssertEqual(
+            GenerateTestsCommand.declaredOutputs(for: plugin, output: "Plugin/Generated/{PREVIEW_FILE_NAME}Tests.generated.swift"),
+            ["Plugin/Generated/BadgeTests.generated.swift", "Plugin/Generated/PlainTests.generated.swift"]
+        )
+    }
+
+    func test_pluginVariableNeedsAValue() {
+        XCTAssertThrowsError(try PluginRun(isPluginRun: true, variables: ["PACKAGE_DIR"]))
+        XCTAssertNil(try PluginRun(isPluginRun: false, variables: ["PACKAGE_DIR=/Package"]))
+    }
+}

@@ -119,16 +119,17 @@ Just run the test target 🚀 — Prefire will auto-generate snapshots based on 
 | SPM Plugin | `PrefireTestsPlugin` / `PrefirePlaybookPlugin` in `Package.swift` |
 | Xcode Build Tool Plugin | Add `PrefireTestsPlugin` to the test target's build phases |
 | CLI | `brew install barredewe/prefire/prefire` |
-| Mint (*Beta*) | `mint install BarredEwe/Prefire` |
+| CLI from source | `swift package experimental-install --product PrefireTool` |
 | GitHub Actions / CI | Any of the above, see [Troubleshooting](#-troubleshooting) |
 
-Step-by-step setup is in the [Installation guide](Documentation/Installation.md).
+Step-by-step setup is in the [Installation guide](Documentation/Installation.md). The plugins build Prefire's generator from source with your project, so the first build takes longer.
 
 ### Requirements
 
 - Swift 6.0 or higher
 - Xcode 16.0 or higher
 - iOS 14 or higher; macOS 13 or higher (macOS: snapshot tests only, see [Configuration](Documentation/Configuration.md#macos-snapshot-tests))
+- swift-syntax 600 to 604 in your package resolution. The plugins build Prefire's generator, so its dependencies resolve with your app: swift-syntax, Stencil, StencilSwiftKit (with Komondor, PackageConfig and ShellOut), PathKit and swift-argument-parser. An app that pins swift-syntax below 600 can't update to this version
 
 ---
 
@@ -343,7 +344,7 @@ All options are in the [Configuration guide](Documentation/Configuration.md). To
 |---------|-----|
 | `NavigationView` in a preview doesn't work in Playbook | Use other views or layouts for your Playbook needs |
 | Plugins don't run on CI | `defaults write com.apple.dt.Xcode IDESkipPackagePluginFingerprintValidatation -bool YES` |
-| Xcode can't generate tests in a custom path | Disable the plugin sandbox: `defaults write com.apple.dt.Xcode IDEPackageSupportDisablePluginExecutionSandbox -bool YES` |
+| `invalid redeclaration of 'PreviewTests'` or `filename "PreviewTests.generated.swift" used twice` after updating | `PrefireTestsPlugin` generates the tests into its work directory and ignores `test_file_path`. Delete the tests an earlier version generated into the test target |
 
 ---
 

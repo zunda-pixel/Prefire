@@ -8,3 +8,4 @@ DerivedData/
 .netrc
 prefire.tar.gz
 prefire-mcp-*.mcpb
+/PrefirePluginTests/.build

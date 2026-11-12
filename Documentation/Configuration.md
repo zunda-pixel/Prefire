@@ -8,7 +8,7 @@ To customize **Prefire**, create a `.prefire.yml` file in the root of your proje
 test_configuration:
   target: PrefireExample
   test_target_path: ${PROJECT_DIR}/Tests
-  test_file_path: PrefireExampleTests/PreviewTests.generated.swift
+  test_file_path: PrefireExampleTests
   template_file_path: CustomPreviewTests.stencil
   simulator_device: "iPhone15,2"
   required_os: 16
@@ -59,15 +59,15 @@ render_configuration:
 | ---------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `target`                                       | Target name used for snapshot generation. Default: _FirstTarget_                                                                                                                                                                          |
 | `test_target_path`                             | Path to unit test directory. Snapshots will be written to its `__Snapshots__` folder. Default: target name folder                                                                                                                         |
-| `test_file_path`                               | Output file path for generated tests. Default: DerivedData or resolved via plugin                                                                                                                                                         |
+| `test_file_path`                               | Directory the `prefire` CLI writes the generated tests into: `PreviewTests.generated.swift`, or a `<Source>Tests.generated.swift` per source. `PrefireTestsPlugin` ignores it and generates the tests into its work directory |
 | `template_file_path`                           | Custom template path relative to target. Optional. Defaults:‣ _PreviewTests.stencil_ for test plugin‣ _PreviewModels.stencil_ for playbook plugin. See [Templates documentation](Templates.md) for available context and filters. |
 | `simulator_device`                             | Device identifier used to run tests (e.g. `iPhone15,2`). Optional                                                                                                                                                                         |
 | `required_os`                                  | Minimal iOS version required for preview rendering. Optional                                                                                                                                                                              |
 | `snapshot_devices`                             | List of logical snapshot "targets" (used as trait collections). Each will snapshot separately. Optional                                                                                                                                   |
 | `preview_default_enabled`                      | Should all detected previews be included by default? Set `false` if you want to require `.prefireEnabled()` manually. Default: `true`                                                                                                     |
-| `use_grouped_snapshots`                        | Generate a single test file with all previews (`true`) or separate test files per source file (`false`). When `false`, use `{PREVIEW_FILE_NAME}` placeholder in `test_file_path`. Default: `true`                                         |
+| `use_grouped_snapshots`                        | Generate a single test file with all previews (`true`) or separate test files per source file (`false`). With `false`, `PrefireTestsPlugin` generates a file for every Swift file of the tested target, with only a comment for the files without previews, so that the files it declares depend only on the list of sources. Default: `true` |
 | `split_snapshot_directories`                   | When `use_grouped_snapshots: false`, also write snapshots into a separate `__Snapshots__/<File>Tests.generated/` folder per source file instead of one shared `__Snapshots__/PreviewTests.generated/` folder. Closes [#80](https://github.com/BarredEwe/Prefire/issues/80). Default: `false` to keep existing snapshot layouts working — opt in once you're ready to move the files.                |
-| `sources`                                      | List of Swift files or folders to scan for previews. Defaults to inferred from the target                                                                                                                                                 |
+| `sources`                                      | List of Swift files or folders to scan for previews. Defaults to inferred from the target. For `PrefireTestsPlugin`, give absolute paths such as `${PACKAGE_DIR}/Sources/MyApp`: it reads these files to know when to run |
 | `imports`                                      | Extra imports added to the generated test or playbook file                                                                                                                                                                                |
 | `testable_imports`                             | Extra `@testable` imports added to allow test visibility                                                                                                                                                                                  |
 | `snapshot_wait_for_idle`                       | Wait for every preview to stop changing before it is captured, instead of relying on `.snapshot(delay:)`. Single previews opt out with `.snapshot(waitForIdle: false)`. Closes [#28](https://github.com/BarredEwe/Prefire/issues/28). Default: `false`                                                                        |
@@ -75,6 +75,8 @@ render_configuration:
 | `draw_hierarchy_in_key_window_default_enabled` | Specifies whether to use the simulator's key window to snapshot the UI, rendering `UIAppearance` and `UIVisualEffect`. This option requires a host application for testing and does not work with framework test targets. Optional. If omitted, uses swift-snapshot-testing's default value. |
 | `full_page_snapshots` | Capture the whole scrollable content of screen previews (the default `#Preview` layout) instead of only the first screen. iOS/tvOS only. See [Full-page snapshots](#full-page-snapshots). Default: `false` |
 | `voiceover_snapshots` | How previews are snapshotted for VoiceOver: a list of `image` and `text`, or `none`. iOS: AccessibilitySnapshot does not support tvOS, where the generated tests skip both strategies. See [VoiceOver snapshots](#voiceover-snapshots). Default: `image` |
+
+A value can use one environment variable as `${NAME}`. The plugins set `PACKAGE_DIR` and `TARGET_DIR` in Swift packages, and `PROJECT_DIR` in Xcode projects. When a plugin runs Prefire, it replaces only these.
 
 ---
 

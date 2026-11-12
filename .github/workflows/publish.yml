@@ -53,7 +53,7 @@ jobs:
           GIT_EMAIL: ${{ github.actor_id }}+${{ github.actor }}@users.noreply.github.com
         run: |
           set -euo pipefail
-          CURRENT="$(sed -n 's/.*static let value: String = "\([^"]*\)".*/\1/p' PrefireExecutable/Sources/prefire/Commands/Version/Version.swift)"
+          CURRENT="$(sed -n 's/.*static let value: String = "\([^"]*\)".*/\1/p' Sources/PrefireTool/Commands/Version/Version.swift)"
           if [ "$CURRENT" = "$VERSION" ]; then
             echo "::error::Already at version ${VERSION}. Push tag ${VERSION} to publish this commit, or pick a new version."
             exit 1
@@ -64,32 +64,28 @@ jobs:
           fi
 
           make update version="${VERSION}"
-          make test
+          swift test
           make mcpb
 
-          bundled="Binaries/PrefireBinary.artifactbundle/prefire-${VERSION}-macos/bin/prefire"
-          actual="$("$bundled" --version)"
+          actual="$("$(swift build -c release --arch arm64 --arch x86_64 --show-bin-path)/PrefireTool" --version)"
           if [ "$actual" != "$VERSION" ]; then
-            echo "::error::Bundled CLI --version is '${actual}', expected '${VERSION}'"
+            echo "::error::Built CLI --version is '${actual}', expected '${VERSION}'"
             exit 1
           fi
 
           git config user.name "$GIT_USER"
           git config user.email "$GIT_EMAIL"
           git add -- \
-            Binaries/PrefireBinary.artifactbundle \
-            PrefireExecutable/Sources/prefire/Commands/Version/Version.swift \
+            Sources/PrefireTool/Commands/Version/Version.swift \
             server.json
           git commit -m "Update version to ${VERSION}"
           git tag "${VERSION}"
           git push origin "HEAD:${BRANCH}" "refs/tags/${VERSION}"
           echo "rebuilt=true" >> "$GITHUB_OUTPUT"
 
-      - name: Rebuild bundled binary and MCP bundle from current source
+      - name: Build the CLI binary and MCP bundle from current source
         if: steps.bump.outputs.rebuilt != 'true'
-        run: |
-          make binary
-          make mcpb
+        run: make mcpb
 
       - name: Create archive
         run: make archive

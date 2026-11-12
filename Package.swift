@@ -7,11 +7,8 @@ let package = Package(
     name: "Prefire",
     platforms: [.iOS(.v14), .macOS(.v13), .watchOS(.v7)],
     products: [
+        .library(name: "Prefire", targets: ["Prefire"]),
         .library(name: "PrefireVoiceOver", targets: ["PrefireVoiceOver"]),
-        .library(
-            name: "Prefire",
-            targets: ["Prefire"]
-        ),
         .plugin(
             name: "PrefirePlaybookPlugin",
             targets: ["PrefirePlaybookPlugin"]
@@ -20,47 +17,54 @@ let package = Package(
             name: "PrefireTestsPlugin",
             targets: ["PrefireTestsPlugin"]
         ),
-        .executable(
-            name: "prefire",
-            targets: ["PrefireCLI"]
-        ),
+    ],
+    dependencies: [
+        .package(url: "https://github.com/apple/swift-argument-parser.git", from: "1.2.3"),
+        .package(url: "https://github.com/kylef/PathKit.git", from: "1.0.1"),
+        .package(url: "https://github.com/swiftlang/swift-syntax.git", "600.0.0"..<"605.0.0"),
+        .package(url: "https://github.com/stencilproject/Stencil.git", from: "0.15.1"),
+        .package(url: "https://github.com/SwiftGen/StencilSwiftKit.git", from: "2.10.1"),
     ],
     targets: [
+        .target(name: "Prefire"),
         .target(
             name: "PrefireVoiceOver",
             dependencies: ["Prefire"]
         ),
         .target(
-            name: "Prefire",
-            dependencies: []
+            name: "PrefireCore",
+            dependencies: [
+                .product(name: "SwiftSyntax", package: "swift-syntax"),
+                .product(name: "SwiftParser", package: "swift-syntax"),
+                .product(name: "Stencil", package: "Stencil"),
+                .product(name: "StencilSwiftKit", package: "StencilSwiftKit"),
+                .product(name: "PathKit", package: "PathKit"),
+            ]
         ),
         .executableTarget(
-            name: "PrefireCLI",
-            resources: [
-                .copy("../../Binaries/PrefireBinary.artifactbundle"),
+            name: "PrefireTool",
+            dependencies: [
+                .product(name: "ArgumentParser", package: "swift-argument-parser"),
+                .target(name: "PrefireCore"),
             ]
         ),
         .testTarget(
-            name: "PrefireCLITests",
-            dependencies: ["PrefireCLI", "Prefire"]
+            name: "PrefireLibraryTests",
+            dependencies: ["Prefire"]
+        ),
+        .testTarget(
+            name: "PrefireTests",
+            dependencies: ["PrefireTool"]
         ),
         .plugin(
             name: "PrefirePlaybookPlugin",
             capability: .buildTool(),
-            dependencies: [
-                "PrefireBinary",
-            ]
+            dependencies: ["PrefireTool"]
         ),
         .plugin(
             name: "PrefireTestsPlugin",
             capability: .buildTool(),
-            dependencies: [
-                "PrefireBinary",
-            ]
-        ),
-        .binaryTarget(
-            name: "PrefireBinary",
-            path: "Binaries/PrefireBinary.artifactbundle"
+            dependencies: ["PrefireTool"]
         ),
     ]
 )

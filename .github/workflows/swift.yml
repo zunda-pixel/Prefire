@@ -16,7 +16,7 @@ jobs:
   build:
     name: Run ${{ matrix.xcode }}
     runs-on: ${{ matrix.runsOn }}
-    timeout-minutes: 10
+    timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
@@ -38,7 +38,16 @@ jobs:
           path: PrefireSnapshotTests/.build/SourcePackages
           key: ios-test-packages-${{ matrix.xcode }}-${{ hashFiles('PrefireSnapshotTests/Package.resolved') }}
           restore-keys: ios-test-packages-${{ matrix.xcode }}-
-        
+
+      - name: Cache SwiftPM builds
+        uses: actions/cache@v4
+        with:
+          path: |
+            .build
+            PrefirePluginTests/.build
+          key: swiftpm-builds-${{ matrix.xcode }}-${{ hashFiles('Package.resolved', 'PrefirePluginTests/Package.resolved') }}
+          restore-keys: swiftpm-builds-${{ matrix.xcode }}-
+
       - name: Build Prefire
         run: make build
 
@@ -50,50 +59,13 @@ jobs:
       - name: Run Prefire iOS Tests
         run: make slim-sim test-ios
 
-      - name: Build prefire CLI wrapper
-        run: swift build -c release --product prefire
+      - name: Build a package with the plugins
+        run: make test-plugins
 
-      - name: Smoke test prefire CLI wrapper
+      - name: Build and pack the release binary
         run: |
-          set -euo pipefail
-          bin=$(pwd)/.build/release/prefire
-          $bin --version
-          $bin --help | grep -q "Generate Playbook"
-          cd /tmp && $bin --version
-          output=$(PREFIRE_BINARY_PATH=/nonexistent $bin --version 2>&1 || true)
-          if echo "$output" | grep -q "failed to launch"; then
-            echo "override error path works"
-          else
-            echo "expected 'failed to launch' error, got: $output" >&2
-            exit 1
-          fi
-
-  executable-tests:
-    name: PrefireExecutable tests ${{ matrix.xcode }}
-    runs-on: ${{ matrix.runsOn }}
-    timeout-minutes: 10
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - xcode: "Xcode_16.4"
-            runsOn: macos-15
-          - xcode: "Xcode_26.4"
-            runsOn: macos-26
-    steps:
-      - uses: actions/checkout@v6
-
-      - name: Select Xcode
-        run: sudo xcode-select -s /Applications/${{ matrix.xcode }}.app
-
-      # Building swift-syntax takes most of `make test`. Sources checked out anew are newer than the
-      # cache, so they are rebuilt; only the dependencies are reused.
-      - name: Cache PrefireExecutable build
-        uses: actions/cache@v4
-        with:
-          path: PrefireExecutable/.build
-          key: prefire-executable-${{ matrix.xcode }}-${{ hashFiles('PrefireExecutable/Package.resolved') }}
-          restore-keys: prefire-executable-${{ matrix.xcode }}-
-
-      - name: Run PrefireExecutable Tests
-        run: make test
+          make archive
+          mkdir -p "$RUNNER_TEMP/prefire"
+          tar -xzf prefire.tar.gz -C "$RUNNER_TEMP/prefire"
+          "$RUNNER_TEMP/prefire/prefire" --version
+          "$RUNNER_TEMP/prefire/prefire" --help | grep -q "Generate Playbook"

@@ -116,7 +116,7 @@ Each release also attaches `prefire-mcp-<version>.mcpb`, an [MCP Bundle](https:/
 with the macOS `prefire` binary, and lists the server in the
 [MCP Registry](https://registry.modelcontextprotocol.io) as `io.github.BarredEwe/prefire`. Clients
 that install bundles, like Claude Desktop, open the file and ask for the `.prefire.yml` of the
-project. `make mcpb` packs one from the bundled binary (it needs Node) and writes its address and
+project. `make mcpb` packs one from the binary `make binary` builds (it needs Node) and writes its address and
 SHA-256 into `server.json`, which the release workflow publishes.
 
 | Tool              | Arguments                                                                                         | Returns                                                                                  |

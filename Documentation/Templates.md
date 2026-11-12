@@ -16,7 +16,6 @@ Point Prefire at a custom template through `template_file_path` in `.prefire.yml
 test_configuration:
   target: MyApp
   test_target_path: ${PROJECT_DIR}/MyAppTests
-  test_file_path: MyAppTests/PreviewTests.generated.swift
   template_file_path: MyAppTests/CustomPreviewTests.stencil
 
 playbook_configuration:
@@ -153,8 +152,8 @@ Only filters that the default templates actually use are listed below. For the c
 
 The built-in templates are the most useful starting point — copy them, change what you need, and reference the new file from `.prefire.yml`.
 
-- **Tests template** — `EmbeddedTemplates.previewTests` in [`PrefireExecutable/Sources/PrefireCore/Templates/PreviewTestsTemplate.swift`](../PrefireExecutable/Sources/PrefireCore/Templates/PreviewTestsTemplate.swift)
-- **Playbook template** — `EmbeddedTemplates.previewModels` in [`PrefireExecutable/Sources/PrefireCore/Templates/PreviewModelsTemplates.swift`](../PrefireExecutable/Sources/PrefireCore/Templates/PreviewModelsTemplates.swift)
+- **Tests template** — `EmbeddedTemplates.previewTests` in [`Sources/PrefireCore/Templates/PreviewTestsTemplate.swift`](../Sources/PrefireCore/Templates/PreviewTestsTemplate.swift)
+- **Playbook template** — `EmbeddedTemplates.previewModels` in [`Sources/PrefireCore/Templates/PreviewModelsTemplates.swift`](../Sources/PrefireCore/Templates/PreviewModelsTemplates.swift)
 
 The tests template declares tests and compares results with SnapshotTesting. Custom templates can reuse
 `PrefireSnapshotSession` from `Prefire` and import the test-only `PrefireVoiceOver` product for text captures:
@@ -179,7 +178,7 @@ Key blocks worth studying:
   ```stencil
   @MainActor class {PREVIEW_FILE_NAME}Tests: XCTestCase {
   ```
-  When `use_grouped_snapshots: false`, Prefire replaces `{PREVIEW_FILE_NAME}` in **both** the output path and the template body with the source-file name before rendering. The same placeholder is also valid in `test_file_path`.
+  When `use_grouped_snapshots: false`, Prefire replaces `{PREVIEW_FILE_NAME}` in **both** the output path and the template body with the source-file name before rendering.
 - **`snapshotDevices` array** — the config stores a pipe-joined string; the template splits it back into a Swift array:
   ```stencil
   {% if argument.snapshotDevices %}
@@ -296,7 +295,6 @@ Wire it up in `.prefire.yml`:
 test_configuration:
   target: MyApp
   test_target_path: ${PROJECT_DIR}/MyAppTests
-  test_file_path: MyAppTests/PreviewTests.generated.swift
   template_file_path: MyAppTests/MinimalPreviewTests.stencil
   imports:
     - UIKit
@@ -374,9 +372,9 @@ import SnapshotTesting
 ## 7. Caveats and tips
 
 - **Required imports** are not auto-added. For tests you almost always need `XCTest`, `SwiftUI`, `Prefire`, and `SnapshotTesting`; for playbook you need `SwiftUI` and `Prefire`. Add them at the top of your template literally.
-- **`{PREVIEW_FILE_NAME}` is a real placeholder.** It is replaced in the template string *and* in `test_file_path` *only* when `use_grouped_snapshots: false`. The class declared in your template must be named `{PREVIEW_FILE_NAME}Tests`, otherwise the generated file won't compile.
+- **`{PREVIEW_FILE_NAME}` is a real placeholder.** It is replaced in the template string *and* in the generated file name *only* when `use_grouped_snapshots: false`. The class declared in your template must be named `{PREVIEW_FILE_NAME}Tests`, otherwise the generated file won't compile.
 - **`snapshotDevices` is a pipe-joined string**, not an array. Use `|split:"|"`. Forgetting the filter produces `devices: iPhone 14|iPad` in the generated file.
 - **Guard `previewsMacrosDict`.** An empty array will still produce a (broken) `for` block. Always wrap the macro loop in `{% if argument.previewsMacrosDict %}`.
-- **Cache invalidation.** `PrefireCacheManager` keys the cache on source content. When you change a template, delete `~/.prefire-cache/` to force a full re-render.
+- **Cache.** Prefire caches what each source file parses to, keyed on its modification date, size and `preview_default_enabled`, not the rendered files, so a template change takes effect on the next run. The cache is in `~/Library/Caches/PrefireCache`, or in the plugin's work directory for the plugins.
 - **`isScreen` is a `Bool` but Stencil may serialize it as `1`/`0`.** Compare with `{% if macroModel.isScreen == 1 %}` rather than `{% if macroModel.isScreen %}`, as in the default template.
 - **Stuck on a syntax error?** Run `prefire tests` once with the default template and look at the generated file — it's the fastest way to see which context keys actually have values for your project.

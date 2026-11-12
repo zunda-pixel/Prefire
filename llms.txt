@@ -16,7 +16,7 @@ Install: add the Swift package `https://github.com/BarredEwe/Prefire.git` with t
 - [README](https://github.com/BarredEwe/Prefire/blob/main/README.md): what Prefire does, quick start, API of preview modifiers
 - [AI agents guide](https://github.com/BarredEwe/Prefire/blob/main/Documentation/AI.md): `prefire render`, the `prefire mcp` server and its tools, `prefire board`, `render_configuration`
 - [Configuration](https://github.com/BarredEwe/Prefire/blob/main/Documentation/Configuration.md): every key of `.prefire.yml`
-- [Installation](https://github.com/BarredEwe/Prefire/blob/main/Documentation/Installation.md): Swift Package Manager, Xcode project, Homebrew, Mint
+- [Installation](https://github.com/BarredEwe/Prefire/blob/main/Documentation/Installation.md): Swift Package Manager, Xcode project, Homebrew, the CLI built from source
 - [Templates](https://github.com/BarredEwe/Prefire/blob/main/Documentation/Templates.md): custom Stencil templates for the generated tests
 
 ## MCP tools
