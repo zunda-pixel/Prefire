@@ -33,7 +33,7 @@ struct PrefireTestsPlugin: BuildToolPlugin {
         let testTargetURL = URL(filePath: String(describing: target.directory))
         let config = PrefireConfigFile.first(in: [testTargetURL, testedTarget.directoryURL, context.package.directoryURL])
 
-        return try GeneratedTests.commands(
+        return GeneratedTests.commands(
             tool: executable,
             arguments: arguments,
             environment: environment,
@@ -78,7 +78,7 @@ struct PrefireTestsPlugin: BuildToolPlugin {
             // Where `prefire` looks for `.prefire.yml`: `--test-target-path`, then `--config`.
             let config = PrefireConfigFile.first(in: [testTargetURL, context.xcodeProject.directoryURL])
 
-            return try GeneratedTests.commands(
+            return GeneratedTests.commands(
                 tool: executable,
                 arguments: arguments,
                 environment: environment,

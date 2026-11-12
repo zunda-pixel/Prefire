@@ -138,4 +138,28 @@ class GenerateTestsCommandTests: XCTestCase {
             XCTAssertEqual(YAMLParser().string(from: arguments), YAMLParser().string(from: expectedArguments))
         }
     }
+
+    func test_declaredOutputsIgnoreTestFilePath() throws {
+        var config = Config()
+        config.tests.testFilePath = "User/Tests/Custom.generated.swift"
+
+        func output(declaredOutputs: [String]) throws -> Path {
+            try GeneratedTestsOptions(
+                target: nil,
+                testTarget: nil,
+                template: nil,
+                sources: [],
+                output: "Plugin/Generated",
+                testTargetPath: nil,
+                cacheBasePath: nil,
+                device: nil,
+                osVersion: nil,
+                config: config,
+                declaredOutputs: declaredOutputs
+            ).output
+        }
+
+        XCTAssertEqual(try output(declaredOutputs: []), "User/Tests/Custom.generated.swift")
+        XCTAssertEqual(try output(declaredOutputs: ["Plugin/Generated/PreviewTests.generated.swift"]), "Plugin/Generated")
+    }
 }

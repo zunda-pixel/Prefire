@@ -19,6 +19,11 @@ struct PrefirePlaybookPlugin: BuildToolPlugin {
             "--verbose",
         ]
 
+        let environment = [
+            "TARGET_DIR": targetPath,
+            "PACKAGE_DIR": context.package.directoryURL.path(percentEncoded: false),
+        ]
+
         let sources = (target as? SwiftSourceModuleTarget)?.sourceFiles.filter { $0.type == .source }.map(\.url) ?? []
 
         // Where `prefire` looks for `.prefire.yml`: `--config`, then `PACKAGE_DIR`.
@@ -28,6 +33,7 @@ struct PrefirePlaybookPlugin: BuildToolPlugin {
         return GeneratedPlaybook.commands(
             tool: executable,
             arguments: arguments,
+            environment: environment,
             sources: sources,
             config: config,
             targetDirectory: targetURL,
@@ -56,12 +62,17 @@ struct PrefirePlaybookPlugin: BuildToolPlugin {
                 "--verbose",
             ]
 
+            let environment = [
+                "PROJECT_DIR": context.xcodeProject.directoryURL.path(percentEncoded: false),
+            ]
+
             // Where `prefire` looks for `.prefire.yml`: `--config`.
             let config = PrefireConfigFile.first(in: [context.xcodeProject.directoryURL])
 
             return GeneratedPlaybook.commands(
                 tool: executable,
                 arguments: arguments,
+                environment: environment,
                 sources: target.inputFiles.filter { $0.type == .source }.map { $0.url },
                 config: config,
                 targetDirectory: targetPath,
@@ -74,9 +85,12 @@ struct PrefirePlaybookPlugin: BuildToolPlugin {
 /// The build command that generates the Playbook models. SwiftPM runs a tool built from source only in a
 /// build command, which declares its output files before the tool runs: here always one file.
 enum GeneratedPlaybook {
+    private static let section = "playbook_configuration"
+
     static func commands(
         tool: URL,
         arguments: [String],
+        environment: [String: String],
         sources: [URL],
         config: PrefireConfigFile?,
         targetDirectory: URL,
@@ -88,19 +102,23 @@ enum GeneratedPlaybook {
         var inputs = sources
         if let config {
             inputs.append(config.url)
-            if let template = config.value(of: "template_file_path", in: "playbook_configuration") {
-                let url = targetDirectory.appending(path: template)
+            if let template = config.value(of: "template_file_path", in: section, environment: environment) {
+                // `prefire` resolves it from `target`, or else from the target's directory.
+                let base = config.value(of: "target", in: section, environment: environment).map { URL(filePath: $0) }
+                let url = (base ?? targetDirectory).appending(path: template)
                 if FileManager.default.fileExists(atPath: url.path) { inputs.append(url) }
             }
         }
 
+        let output = outputDirectory.appending(path: "PreviewModels.generated.swift")
         return [
             .buildCommand(
                 displayName: "Running Prefire",
                 executable: tool,
-                arguments: arguments + sources.map(\.path),
+                arguments: arguments + ["--declared-output", output.path] + sources.map(\.path),
+                environment: environment,
                 inputFiles: inputs,
-                outputFiles: [outputDirectory.appending(path: "PreviewModels.generated.swift")]
+                outputFiles: [output]
             ),
         ]
     }

@@ -24,9 +24,20 @@ extension Prefire {
         @Flag(help: "Display full info")
         var verbose = false
 
+        @Option(help: ArgumentHelp(
+            "A file the build tool plugin declared. Prefire writes only these, and a comment into the ones without previews.",
+            visibility: .hidden
+        ))
+        var declaredOutput: [String] = []
+
         func run() async throws {
             Logger.level = verbose ? .verbose : .warnings
-            let config = Config.load(from: config, testTargetPath: nil, env: ProcessInfo.processInfo.environment)
+            let config = Config.load(
+                from: config,
+                testTargetPath: nil,
+                env: ProcessInfo.processInfo.environment,
+                includeCurrentDirectory: declaredOutput.isEmpty
+            )
 
             try await GeneratePlaybookCommand.run(
                 GeneratedPlaybookOptions(
@@ -35,7 +46,8 @@ extension Prefire {
                     output: output,
                     template: template,
                     cacheBasePath: cacheBasePath,
-                    config: config
+                    config: config,
+                    declaredOutputs: declaredOutput
                 )
             )
         }

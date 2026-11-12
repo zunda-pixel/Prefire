@@ -14,10 +14,11 @@ struct PrefireCacheManager {
     func loadOrGenerate(
         sources: [Path],
         template: String,
+        defaultEnabled: Bool,
         parseTypes: () throws -> [ParsedType],
         parsePreviews: () async throws -> [String: RawPreviewModel]
     ) async throws -> (types: [ParsedType], previews: [String: RawPreviewModel]) {
-        let key = fingerprint(for: sources, extra: template + "\npreview-model-cache-v3")
+        let key = fingerprint(for: sources, extra: template + "\ndefault-enabled-\(defaultEnabled)\npreview-model-cache-v3")
         let dir = Path.cachesDir(sourcePath: sources.first ?? .current, basePath: cacheBasePath)
         let typesFile = dir + "\(version)-\(key).types.json"
         let previewsFile = dir + "\(version)-\(key).previews.json"

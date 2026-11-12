@@ -28,7 +28,7 @@ struct GeneratedTestsOptions {
     var snapshotWaitTimeout: Double?
     var fullPageSnapshots: Bool
     var voiceOverSnapshots: [String]?
-    var filePerPreviewSource: Bool
+    var declaredOutputs: [Path]
 
     init(
         target: String?,
@@ -41,7 +41,7 @@ struct GeneratedTestsOptions {
         device: String?,
         osVersion: String?,
         config: Config?,
-        filePerPreviewSource: Bool = false
+        declaredOutputs: [String] = []
     ) throws {
         self.target = config?.tests.target ?? target
         self.testTarget = testTarget
@@ -56,7 +56,9 @@ struct GeneratedTestsOptions {
         }
 
         self.sources = (config?.tests.sources ?? sources).compactMap({ Path($0) })
-        self.output = (config?.tests.testFilePath ?? output).flatMap({ Path($0) }) ?? .current
+        // A build tool plugin chooses the output, and has declared the files in it.
+        let testFilePath = declaredOutputs.isEmpty ? config?.tests.testFilePath : nil
+        self.output = (testFilePath ?? output).flatMap({ Path($0) }) ?? .current
         prefireEnabledMarker = config?.tests.previewDefaultEnabled ?? true
         self.cacheBasePath = cacheBasePath.flatMap({ Path($0) })
         self.device = config?.tests.device ?? device
@@ -71,7 +73,7 @@ struct GeneratedTestsOptions {
         snapshotWaitTimeout = config?.tests.snapshotWaitTimeout
         fullPageSnapshots = config?.tests.fullPageSnapshots ?? false
         voiceOverSnapshots = config?.tests.voiceOverSnapshots
-        self.filePerPreviewSource = filePerPreviewSource
+        self.declaredOutputs = declaredOutputs.map { Path($0) }
     }
 }
 
@@ -109,7 +111,7 @@ enum GenerateTestsCommand {
             defaultEnabled: options.prefireEnabledMarker,
             cacheDir: options.cacheBasePath,
             useGroupedSnapshots: options.useGroupedSnapshots,
-            writeFilePerPreviewSource: options.filePerPreviewSource
+            declaredOutputs: options.declaredOutputs.isEmpty ? nil : options.declaredOutputs
         )
     }
 

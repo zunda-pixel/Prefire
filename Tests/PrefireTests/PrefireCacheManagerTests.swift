@@ -27,6 +27,7 @@ final class PrefireCacheManagerTests: XCTestCase {
         let (firstTypes, firstPreviews) = try await manager.loadOrGenerate(
             sources: [file],
             template: template,
+            defaultEnabled: true,
             parseTypes: {
                 parsed = true
                 return [ParsedType(name: "Example", kind: .struct)]
@@ -48,6 +49,7 @@ final class PrefireCacheManagerTests: XCTestCase {
         let (cachedTypes, cachedPreviews) = try await manager.loadOrGenerate(
             sources: [file],
             template: template,
+            defaultEnabled: true,
             parseTypes: {
                 XCTFail("Should not re-parse types if cache is valid")
                 return []
@@ -68,6 +70,7 @@ final class PrefireCacheManagerTests: XCTestCase {
         let (updatedTypes, updatedPreviews) = try await manager.loadOrGenerate(
             sources: [file],
             template: template,
+            defaultEnabled: true,
             parseTypes: {
                 []
             },

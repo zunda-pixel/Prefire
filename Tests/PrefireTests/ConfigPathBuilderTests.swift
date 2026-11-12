@@ -101,4 +101,21 @@ class ConfigPathBuilderTests: XCTestCase {
 
         XCTAssertEqual(result, expectableResult)
     }
+
+    func test_possibleConfigPathsWithoutCurrentDirectory() {
+        let result = ConfigPathBuilder.possibleConfigPaths(
+            for: "Config",
+            testTargetPath: testTargetPath,
+            packagePath: "/Package",
+            includeCurrentDirectory: false
+        )
+
+        let expectableResult = [
+            FileManager.default.currentDirectoryPath + "/\(testTargetPath)" + "/\(configFileName)",
+            FileManager.default.currentDirectoryPath + "/Config/" + configFileName,
+            "/Package/" + configFileName,
+        ]
+
+        XCTAssertEqual(result, expectableResult)
+    }
 }

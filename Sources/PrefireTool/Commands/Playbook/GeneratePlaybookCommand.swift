@@ -15,8 +15,17 @@ struct GeneratedPlaybookOptions {
     var cacheBasePath: Path?
     var imports: [String]?
     var testableImports: [String]?
+    var declaredOutputs: [Path]
 
-    init(targetPath: String?, sources: [String], output: String?, template: String?, cacheBasePath: String?, config: Config?) throws {
+    init(
+        targetPath: String?,
+        sources: [String],
+        output: String?,
+        template: String?,
+        cacheBasePath: String?,
+        config: Config?,
+        declaredOutputs: [String] = []
+    ) throws {
         self.targetPath = config?.playbook.targetPath ?? targetPath
         self.sources = sources.isEmpty ? [.current] : sources.compactMap({ Path($0) })
 
@@ -35,6 +44,7 @@ struct GeneratedPlaybookOptions {
         self.cacheBasePath = cacheBasePath.flatMap({ Path($0) })
         imports = config?.playbook.imports
         testableImports = config?.playbook.testableImports
+        self.declaredOutputs = declaredOutputs.map { Path($0) }
     }
 }
 
@@ -53,7 +63,8 @@ enum GeneratePlaybookCommand {
             inlineTemplate: try options.template?.read(.utf8) ?? EmbeddedTemplates.previewModels,
             defaultEnabled: options.previewDefaultEnabled,
             cacheDir: options.cacheBasePath,
-            useGroupedSnapshots: true // Playbooks are always grouped
+            useGroupedSnapshots: true, // Playbooks are always grouped
+            declaredOutputs: options.declaredOutputs.isEmpty ? nil : options.declaredOutputs
         )
     }
 
