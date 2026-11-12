@@ -6,10 +6,11 @@ SHELL := /bin/bash
 .DELETE_ON_ERROR:
 .DEFAULT_GOAL := help
 
-VERSION_FILE := PrefireExecutable/Sources/prefire/Commands/Version/Version.swift
+VERSION_FILE := Sources/PrefireTool/Commands/Version/Version.swift
 CUR_VERSION = $(shell sed -n 's/.*static let value: String = "\([^"]*\)".*/\1/p' $(VERSION_FILE))
-# The universal binary `make binary` builds for the release files (Homebrew, MCP Bundle).
-BINARY := PrefireExecutable/.build/apple/products/release/prefire
+# The universal binary `make binary` builds for the release files (Homebrew, MCP Bundle), which name it prefire.
+BINARY = $(shell swift build -c release --arch arm64 --arch x86_64 --show-bin-path)/PrefireTool
+ARCHIVE_STAGE := .build/archive
 
 # MCP Bundle of `prefire mcp` for the MCP Registry, which wants "mcp" in the file name.
 MCPB_CLI := npx --yes @anthropic-ai/mcpb@2.1.2
@@ -85,7 +86,7 @@ IOS_SIMULATOR_SLIM_JOBS := \
 # `make slim-sim` are added and removed. It survives `simctl erase`.
 IOS_SIMULATOR_DISABLED_STORE = /private/var/tmp/com.apple.CoreSimulator.SimDevice.$(IOS_SIMULATOR_ID)/disabled.plist
 
-.PHONY: help build binary test test-cli test-ios test-plugins slim-sim restore-sim update archive mcpb clean
+.PHONY: help build binary test-ios test-plugins slim-sim restore-sim update archive mcpb clean
 
 ##@ General
 
@@ -99,7 +100,7 @@ help: ## Show this help
 	@echo
 
 clean: ## Remove local SwiftPM build products, prefire.tar.gz and .mcpb files
-	rm -rf PrefireExecutable/.build PrefireSnapshotTests/.build .build prefire.tar.gz prefire-mcp-*.mcpb
+	rm -rf PrefireSnapshotTests/.build .build prefire.tar.gz prefire-mcp-*.mcpb
 
 ##@ Build
 
@@ -125,15 +126,9 @@ build: ## Build Prefire (iOS Simulator, Release)
 	}
 
 binary: ## Build the universal CLI binary for the release files
-	cd PrefireExecutable && swift build -c release --arch arm64 --arch x86_64
+	swift build -c release --arch arm64 --arch x86_64 --product PrefireTool
 
 ##@ Test
-
-test: ## Run PrefireExecutable unit tests
-	cd PrefireExecutable && swift test
-
-test-cli: ## Run PrefireCLI unit tests
-	swift test --filter PrefireCLITests
 
 test-ios: ## Run the Prefire library tests on an iPhone simulator
 	cd PrefireSnapshotTests && xcodebuild test \
@@ -179,7 +174,10 @@ update: ## Bump version and build the CLI binary (make update version=x.y.z)
 
 archive: ## Pack the CLI binary into prefire.tar.gz
 	$(call require-version)
-	tar -czf prefire.tar.gz -C "$(dir $(BINARY))" prefire
+	rm -rf "$(ARCHIVE_STAGE)"
+	mkdir -p "$(ARCHIVE_STAGE)"
+	cp "$(BINARY)" "$(ARCHIVE_STAGE)/prefire"
+	tar -czf prefire.tar.gz -C "$(ARCHIVE_STAGE)" prefire
 
 mcpb: ## Pack the CLI binary into prefire-mcp-<version>.mcpb and point server.json at it (needs Node)
 	$(call require-version)

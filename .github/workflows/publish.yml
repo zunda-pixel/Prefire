@@ -53,7 +53,7 @@ jobs:
           GIT_EMAIL: ${{ github.actor_id }}+${{ github.actor }}@users.noreply.github.com
         run: |
           set -euo pipefail
-          CURRENT="$(sed -n 's/.*static let value: String = "\([^"]*\)".*/\1/p' PrefireExecutable/Sources/prefire/Commands/Version/Version.swift)"
+          CURRENT="$(sed -n 's/.*static let value: String = "\([^"]*\)".*/\1/p' Sources/PrefireTool/Commands/Version/Version.swift)"
           if [ "$CURRENT" = "$VERSION" ]; then
             echo "::error::Already at version ${VERSION}. Push tag ${VERSION} to publish this commit, or pick a new version."
             exit 1
@@ -64,10 +64,10 @@ jobs:
           fi
 
           make update version="${VERSION}"
-          make test
+          swift test
           make mcpb
 
-          actual="$(PrefireExecutable/.build/apple/products/release/prefire --version)"
+          actual="$("$(swift build -c release --arch arm64 --arch x86_64 --show-bin-path)/PrefireTool" --version)"
           if [ "$actual" != "$VERSION" ]; then
             echo "::error::Built CLI --version is '${actual}', expected '${VERSION}'"
             exit 1
@@ -76,7 +76,7 @@ jobs:
           git config user.name "$GIT_USER"
           git config user.email "$GIT_EMAIL"
           git add -- \
-            PrefireExecutable/Sources/prefire/Commands/Version/Version.swift \
+            Sources/PrefireTool/Commands/Version/Version.swift \
             server.json
           git commit -m "Update version to ${VERSION}"
           git tag "${VERSION}"

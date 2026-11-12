@@ -153,8 +153,8 @@ Only filters that the default templates actually use are listed below. For the c
 
 The built-in templates are the most useful starting point — copy them, change what you need, and reference the new file from `.prefire.yml`.
 
-- **Tests template** — `EmbeddedTemplates.previewTests` in [`PrefireExecutable/Sources/PrefireCore/Templates/PreviewTestsTemplate.swift`](../PrefireExecutable/Sources/PrefireCore/Templates/PreviewTestsTemplate.swift)
-- **Playbook template** — `EmbeddedTemplates.previewModels` in [`PrefireExecutable/Sources/PrefireCore/Templates/PreviewModelsTemplates.swift`](../PrefireExecutable/Sources/PrefireCore/Templates/PreviewModelsTemplates.swift)
+- **Tests template** — `EmbeddedTemplates.previewTests` in [`Sources/PrefireCore/Templates/PreviewTestsTemplate.swift`](../Sources/PrefireCore/Templates/PreviewTestsTemplate.swift)
+- **Playbook template** — `EmbeddedTemplates.previewModels` in [`Sources/PrefireCore/Templates/PreviewModelsTemplates.swift`](../Sources/PrefireCore/Templates/PreviewModelsTemplates.swift)
 
 The tests template declares tests and compares results with SnapshotTesting. Custom templates can reuse
 `PrefireSnapshotSession` from `Prefire` and import the test-only `PrefireVoiceOver` product for text captures:

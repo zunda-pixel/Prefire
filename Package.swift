@@ -39,20 +39,22 @@ let package = Package(
                 .product(name: "Stencil", package: "Stencil"),
                 .product(name: "StencilSwiftKit", package: "StencilSwiftKit"),
                 .product(name: "PathKit", package: "PathKit"),
-            ],
-            path: "PrefireExecutable/Sources/PrefireCore"
+            ]
         ),
         .executableTarget(
             name: "PrefireTool",
             dependencies: [
                 .product(name: "ArgumentParser", package: "swift-argument-parser"),
                 .target(name: "PrefireCore"),
-            ],
-            path: "PrefireExecutable/Sources/prefire"
+            ]
         ),
         .testTarget(
             name: "PrefireCLITests",
             dependencies: ["Prefire"]
+        ),
+        .testTarget(
+            name: "PrefireTests",
+            dependencies: ["PrefireTool"]
         ),
         .plugin(
             name: "PrefirePlaybookPlugin",

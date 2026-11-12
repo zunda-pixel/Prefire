@@ -47,7 +47,7 @@ final class VoiceOverTemplateTests: XCTestCase {
     /// A configured reference file is part of every strategy case: it exercises the
     /// escaping image callback's explicit `self.file` forwarding.
     private func generateStrategyOutput(_ strategies: String?, index: Int) async throws -> String {
-        let root = Path(#filePath).parent().parent().parent().parent()
+        let root = Path(#filePath).parent().parent().parent()
         let temporary = root + "Tasks/temp/VoiceOverStrategies\(index)"
         defer { try? temporary.delete() }
         let output = temporary + "PreviewTests.generated.swift"
@@ -71,7 +71,7 @@ final class VoiceOverTemplateTests: XCTestCase {
     }
 
     func testGeneratedTextConsumerMatchesTheCompiledFixture() async throws {
-        let root = Path(#filePath).parent().parent().parent().parent()
+        let root = Path(#filePath).parent().parent().parent()
         let temporary = root + "Tasks/temp/VoiceOverConsumer"
         defer { try? temporary.delete() }
         let output = temporary + "PreviewTests.generated.swift"
