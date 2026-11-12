@@ -95,12 +95,13 @@ prefire playbook --help
 
 ### CLI from source
 
-Build the CLI with SwiftPM from a checkout of Prefire. `experimental-install` puts it in `~/.swiftpm/bin` under the name `PrefireTool`:
+Build the CLI with SwiftPM from a checkout of Prefire. `experimental-install` puts it in `~/.swiftpm/bin` under the name `PrefireTool`, so link it as `prefire`, the name the rest of the documentation and the MCP setup use:
 
 ```bash
 git clone https://github.com/BarredEwe/Prefire.git
 cd Prefire
 swift package experimental-install --product PrefireTool
+ln -s ~/.swiftpm/bin/PrefireTool ~/.swiftpm/bin/prefire
 ```
 
 To run it without installing, use `swift run PrefireTool` in the same directory.

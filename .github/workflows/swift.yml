@@ -38,7 +38,16 @@ jobs:
           path: PrefireSnapshotTests/.build/SourcePackages
           key: ios-test-packages-${{ matrix.xcode }}-${{ hashFiles('PrefireSnapshotTests/Package.resolved') }}
           restore-keys: ios-test-packages-${{ matrix.xcode }}-
-        
+
+      - name: Cache SwiftPM builds
+        uses: actions/cache@v4
+        with:
+          path: |
+            .build
+            PrefirePluginTests/.build
+          key: swiftpm-builds-${{ matrix.xcode }}-${{ hashFiles('Package.resolved', 'PrefirePluginTests/Package.resolved') }}
+          restore-keys: swiftpm-builds-${{ matrix.xcode }}-
+
       - name: Build Prefire
         run: make build
 

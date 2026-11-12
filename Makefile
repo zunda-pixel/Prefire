@@ -100,7 +100,7 @@ help: ## Show this help
 	@echo
 
 clean: ## Remove local SwiftPM build products, prefire.tar.gz and .mcpb files
-	rm -rf PrefireSnapshotTests/.build .build prefire.tar.gz prefire-mcp-*.mcpb
+	rm -rf PrefireSnapshotTests/.build PrefirePluginTests/.build .build prefire.tar.gz prefire-mcp-*.mcpb
 
 ##@ Build
 

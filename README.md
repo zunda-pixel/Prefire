@@ -343,7 +343,7 @@ All options are in the [Configuration guide](Documentation/Configuration.md). To
 |---------|-----|
 | `NavigationView` in a preview doesn't work in Playbook | Use other views or layouts for your Playbook needs |
 | Plugins don't run on CI | `defaults write com.apple.dt.Xcode IDESkipPackagePluginFingerprintValidatation -bool YES` |
-| `PrefireTestsPlugin` stops because of `test_file_path` | The plugin generates the tests into its work directory. Remove `test_file_path`, or generate the tests with the `prefire` CLI |
+| `invalid redeclaration of 'PreviewTests'` or `filename "PreviewTests.generated.swift" used twice` after updating | `PrefireTestsPlugin` generates the tests into its work directory and ignores `test_file_path`. Delete the tests an earlier version generated into the test target |
 
 ---
 

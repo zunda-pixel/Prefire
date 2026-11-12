@@ -16,7 +16,6 @@ Point Prefire at a custom template through `template_file_path` in `.prefire.yml
 test_configuration:
   target: MyApp
   test_target_path: ${PROJECT_DIR}/MyAppTests
-  test_file_path: MyAppTests/PreviewTests.generated.swift
   template_file_path: MyAppTests/CustomPreviewTests.stencil
 
 playbook_configuration:
@@ -296,7 +295,6 @@ Wire it up in `.prefire.yml`:
 test_configuration:
   target: MyApp
   test_target_path: ${PROJECT_DIR}/MyAppTests
-  test_file_path: MyAppTests/PreviewTests.generated.swift
   template_file_path: MyAppTests/MinimalPreviewTests.stencil
   imports:
     - UIKit
