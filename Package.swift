@@ -7,11 +7,8 @@ let package = Package(
     name: "Prefire",
     platforms: [.iOS(.v14), .macOS(.v13), .watchOS(.v7)],
     products: [
+        .library(name: "Prefire", targets: ["Prefire"]),
         .library(name: "PrefireVoiceOver", targets: ["PrefireVoiceOver"]),
-        .library(
-            name: "Prefire",
-            targets: ["Prefire"]
-        ),
         .plugin(
             name: "PrefirePlaybookPlugin",
             targets: ["PrefirePlaybookPlugin"]
@@ -29,13 +26,10 @@ let package = Package(
         .package(url: "https://github.com/SwiftGen/StencilSwiftKit.git", from: "2.10.1"),
     ],
     targets: [
+        .target(name: "Prefire"),
         .target(
             name: "PrefireVoiceOver",
             dependencies: ["Prefire"]
-        ),
-        .target(
-            name: "Prefire",
-            dependencies: []
         ),
         .target(
             name: "PrefireCore",
@@ -44,18 +38,15 @@ let package = Package(
                 .product(name: "SwiftParser", package: "swift-syntax"),
                 .product(name: "Stencil", package: "Stencil"),
                 .product(name: "StencilSwiftKit", package: "StencilSwiftKit"),
-                "PathKit",
+                .product(name: "PathKit", package: "PathKit"),
             ],
             path: "PrefireExecutable/Sources/PrefireCore"
         ),
-        // `prefire`, which the plugins build and run. No product: Xcode builds an executable product under
-        // the product's name, but looks a plugin tool up by the target's name. Not named `prefire`, which
-        // clashes with the `Prefire` module on case-insensitive disks.
         .executableTarget(
             name: "PrefireTool",
             dependencies: [
                 .product(name: "ArgumentParser", package: "swift-argument-parser"),
-                "PrefireCore",
+                .target(name: "PrefireCore"),
             ],
             path: "PrefireExecutable/Sources/prefire"
         ),
@@ -66,16 +57,12 @@ let package = Package(
         .plugin(
             name: "PrefirePlaybookPlugin",
             capability: .buildTool(),
-            dependencies: [
-                "PrefireTool",
-            ]
+            dependencies: ["PrefireTool"]
         ),
         .plugin(
             name: "PrefireTestsPlugin",
             capability: .buildTool(),
-            dependencies: [
-                "PrefireTool",
-            ]
+            dependencies: ["PrefireTool"]
         ),
     ]
 )
