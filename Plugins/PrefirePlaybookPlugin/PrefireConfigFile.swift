@@ -13,7 +13,8 @@ struct PrefireConfigFile {
     static func first(in directories: [URL]) -> PrefireConfigFile? {
         for directory in directories {
             let url = directory.appending(path: fileName)
-            if let contents = try? String(contentsOf: url, encoding: .utf8) {
+            if let data = try? Data(contentsOf: url) {
+                let contents = String(decoding: data, as: UTF8.self)
                 return PrefireConfigFile(url: url, lines: contents.components(separatedBy: .newlines))
             }
         }

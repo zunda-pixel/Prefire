@@ -111,7 +111,8 @@ extension Config {
         for path in possibleConfigPaths {
             let configUrl = URL(filePath: path)
             guard FileManager.default.fileExists(atPath: configUrl.path),
-                  let configDataString = try? String(contentsOf: configUrl, encoding: .utf8) else { continue }
+                  let configData = try? Data(contentsOf: configUrl) else { continue }
+            let configDataString = String(decoding: configData, as: UTF8.self)
 
             Logger.info("🟢 The '.prefire' file is used on the path: \(configUrl.path)")
 
