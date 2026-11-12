@@ -85,7 +85,7 @@ IOS_SIMULATOR_SLIM_JOBS := \
 # `make slim-sim` are added and removed. It survives `simctl erase`.
 IOS_SIMULATOR_DISABLED_STORE = /private/var/tmp/com.apple.CoreSimulator.SimDevice.$(IOS_SIMULATOR_ID)/disabled.plist
 
-.PHONY: help build binary cli test test-cli test-ios test-plugins slim-sim restore-sim update archive mcpb clean
+.PHONY: help build binary test test-cli test-ios test-plugins slim-sim restore-sim update archive mcpb clean
 
 ##@ General
 
@@ -126,9 +126,6 @@ build: ## Build Prefire (iOS Simulator, Release)
 
 binary: ## Build the universal CLI binary for the release files
 	cd PrefireExecutable && swift build -c release --arch arm64 --arch x86_64
-
-cli: ## Build the prefire CLI from source
-	swift build -c release --product prefire
 
 ##@ Test
 

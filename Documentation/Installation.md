@@ -4,7 +4,7 @@ Supports:
 - ✅ SPM Plugin (`Package.swift`)
 - ✅ Xcode Build Tool Plugin
 - ✅ CLI (`brew install barredewe/prefire/prefire`)
-- ✅ Mint (*Beta*) (`mint install BarredEwe/Prefire`)
+- ✅ CLI from source (`swift package experimental-install`)
 - ✅ GitHub Actions / CI
 
 ---
@@ -93,13 +93,17 @@ prefire playbook --help
 
 ---
 
-### Mint
+### CLI from source
 
-Install the CLI via [Mint](https://github.com/yonaskolb/Mint), which builds it from source:
+Build the CLI with SwiftPM from a checkout of Prefire. `experimental-install` puts `prefire` in `~/.swiftpm/bin`:
 
 ```bash
-mint install BarredEwe/Prefire
+git clone https://github.com/BarredEwe/Prefire.git
+cd Prefire/PrefireExecutable
+swift package experimental-install --product prefire
 ```
+
+To run it without installing, use `swift run prefire` in the same directory.
 
 ---
 

@@ -20,12 +20,8 @@ let package = Package(
             name: "PrefireTestsPlugin",
             targets: ["PrefireTestsPlugin"]
         ),
-        .executable(
-            name: "prefire",
-            targets: ["PrefireCLI"]
-        ),
     ],
-    // The generator of PrefireExecutable, built from source for the plugins and the `prefire` product.
+    // The generator of PrefireExecutable, built from source for the plugins.
     // Keep these in step with PrefireExecutable/Package.swift, with ranges wide enough for the packages
     // they meet in an app.
     dependencies: [
@@ -65,14 +61,9 @@ let package = Package(
             ],
             path: "PrefireExecutable/Sources/PrefireCommands"
         ),
-        // `prefire`, for `swift run prefire` and Mint.
-        .executableTarget(
-            name: "PrefireCLI",
-            dependencies: ["PrefireCommands"]
-        ),
-        // The same command, which the plugins build and run. A target of its own without a product:
-        // Xcode builds an executable product under the product's name, but looks a plugin tool up by
-        // the target's name. Not `prefire`, which clashes with the `Prefire` module on case-insensitive disks.
+        // `prefire`, which the plugins build and run. No product: Xcode builds an executable product under
+        // the product's name, but looks a plugin tool up by the target's name. Not named `prefire`, which
+        // clashes with the `Prefire` module on case-insensitive disks.
         .executableTarget(
             name: "PrefireTool",
             dependencies: ["PrefireCommands"]

@@ -3,7 +3,7 @@
 
 import PackageDescription
 
-// The root Package.swift builds these sources too, for the plugins and the `prefire` product.
+// The root Package.swift builds these sources too, for the plugins.
 // Keep the dependencies of both manifests in step.
 let package = Package(
     name: "PrefireExecutable",

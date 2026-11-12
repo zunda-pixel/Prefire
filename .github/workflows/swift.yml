@@ -53,17 +53,6 @@ jobs:
       - name: Build a package with the plugins
         run: make test-plugins
 
-      - name: Build prefire CLI
-        run: make cli
-
-      - name: Smoke test prefire CLI
-        run: |
-          set -euo pipefail
-          bin=$(pwd)/.build/release/prefire
-          $bin --version
-          $bin --help | grep -q "Generate Playbook"
-          cd /tmp && $bin --version
-
   executable-tests:
     name: PrefireExecutable tests ${{ matrix.xcode }}
     runs-on: ${{ matrix.runsOn }}

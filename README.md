@@ -119,7 +119,7 @@ Just run the test target 🚀 — Prefire will auto-generate snapshots based on 
 | SPM Plugin | `PrefireTestsPlugin` / `PrefirePlaybookPlugin` in `Package.swift` |
 | Xcode Build Tool Plugin | Add `PrefireTestsPlugin` to the test target's build phases |
 | CLI | `brew install barredewe/prefire/prefire` |
-| Mint (*Beta*) | `mint install BarredEwe/Prefire` |
+| CLI from source | `swift package experimental-install` in `PrefireExecutable` |
 | GitHub Actions / CI | Any of the above, see [Troubleshooting](#-troubleshooting) |
 
 Step-by-step setup is in the [Installation guide](Documentation/Installation.md). The plugins build Prefire's generator from source with your project, so the first build takes longer.

@@ -32,6 +32,6 @@ The [Example](Example) project shows Prefire in an Xcode app with a snapshot tes
 - `PrefireTestsPlugin` / `PrefirePlaybookPlugin` — SPM/Xcode integrations, which build `PrefireTool` from these sources
 - `prefire` — CLI entry point, calls shared generator code
 
-The sources live in `PrefireExecutable`, a package of its own for `make test` and the release binary. The root `Package.swift` builds the same sources for the plugins and the `prefire` product, so keep the dependencies of both manifests in step.
+The sources live in `PrefireExecutable`, a package of its own for `make test` and the release binary. The root `Package.swift` builds the same sources for the plugins, so keep the dependencies of both manifests in step.
 
 Generated code comes from [Stencil templates](Documentation/Templates.md).
