@@ -1,5 +1,5 @@
 import Foundation
-@testable import PrefireCommands
+@testable import prefire
 import XCTest
 
 class YAMLParserTests: XCTestCase {

@@ -21,13 +21,9 @@ let package = Package(
             targets: ["PrefireTestsPlugin"]
         ),
     ],
-    // The generator of PrefireExecutable, built from source for the plugins.
-    // Keep these in step with PrefireExecutable/Package.swift, with ranges wide enough for the packages
-    // they meet in an app.
     dependencies: [
         .package(url: "https://github.com/apple/swift-argument-parser.git", from: "1.2.3"),
         .package(url: "https://github.com/kylef/PathKit.git", from: "1.0.1"),
-        // A major version of swift-syntax per Swift release; PrefireCore builds with 600 to 604.
         .package(url: "https://github.com/swiftlang/swift-syntax.git", "600.0.0"..<"605.0.0"),
         .package(url: "https://github.com/stencilproject/Stencil.git", from: "0.15.1"),
         .package(url: "https://github.com/SwiftGen/StencilSwiftKit.git", from: "2.10.1"),
@@ -52,21 +48,16 @@ let package = Package(
             ],
             path: "PrefireExecutable/Sources/PrefireCore"
         ),
-        .target(
-            name: "PrefireCommands",
-            dependencies: [
-                .product(name: "ArgumentParser", package: "swift-argument-parser"),
-                "PrefireCore",
-                "PathKit",
-            ],
-            path: "PrefireExecutable/Sources/PrefireCommands"
-        ),
         // `prefire`, which the plugins build and run. No product: Xcode builds an executable product under
         // the product's name, but looks a plugin tool up by the target's name. Not named `prefire`, which
         // clashes with the `Prefire` module on case-insensitive disks.
         .executableTarget(
             name: "PrefireTool",
-            dependencies: ["PrefireCommands"]
+            dependencies: [
+                .product(name: "ArgumentParser", package: "swift-argument-parser"),
+                "PrefireCore",
+            ],
+            path: "PrefireExecutable/Sources/prefire"
         ),
         .testTarget(
             name: "PrefireCLITests",

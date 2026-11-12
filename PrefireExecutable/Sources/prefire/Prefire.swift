@@ -1,6 +1,19 @@
-import PrefireCommands
+@preconcurrency import ArgumentParser
+import Foundation
 
-// Empty: `Prefire` has all @main needs, the async static main() of AsyncParsableCommand.
-// A top-level `await Prefire.main()` in main.swift would pick the synchronous main() of ParsableCommand.
 @main
-extension Prefire {}
+struct Prefire: AsyncParsableCommand {
+    static let configuration: CommandConfiguration = .init(
+        commandName: "prefire",
+        abstract: "A tool to easy generation: Playbook and Snapshot/Accessibility Tests.",
+        version: Version.value,
+        subcommands: [
+            Playbook.self,
+            Tests.self,
+            Render.self,
+            Board.self,
+            MCP.self,
+            Version.self
+        ]
+    )
+}

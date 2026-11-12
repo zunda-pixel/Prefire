@@ -28,7 +28,6 @@ The [Example](Example) project shows Prefire in an Xcode app with a snapshot tes
 - `PrefireCore` — AST + preview parsing, caching, logic
 - `PrefireGenerator` — handles stencil templating + snapshot generation
 - `PrefireCacheManager` — unifies caching for `Types` and `Previews`
-- `PrefireCommands` — the `prefire` commands, shared by the CLI and the plugins
 - `PrefireTestsPlugin` / `PrefirePlaybookPlugin` — SPM/Xcode integrations, which build `PrefireTool` from these sources
 - `prefire` — CLI entry point, calls shared generator code
 

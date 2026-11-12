@@ -6,7 +6,7 @@ SHELL := /bin/bash
 .DELETE_ON_ERROR:
 .DEFAULT_GOAL := help
 
-VERSION_FILE := PrefireExecutable/Sources/PrefireCommands/Commands/Version/Version.swift
+VERSION_FILE := PrefireExecutable/Sources/prefire/Commands/Version/Version.swift
 CUR_VERSION = $(shell sed -n 's/.*static let value: String = "\([^"]*\)".*/\1/p' $(VERSION_FILE))
 # The universal binary `make binary` builds for the release files (Homebrew, MCP Bundle).
 BINARY := PrefireExecutable/.build/apple/products/release/prefire

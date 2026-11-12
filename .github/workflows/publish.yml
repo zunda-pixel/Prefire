@@ -53,7 +53,7 @@ jobs:
           GIT_EMAIL: ${{ github.actor_id }}+${{ github.actor }}@users.noreply.github.com
         run: |
           set -euo pipefail
-          CURRENT="$(sed -n 's/.*static let value: String = "\([^"]*\)".*/\1/p' PrefireExecutable/Sources/PrefireCommands/Commands/Version/Version.swift)"
+          CURRENT="$(sed -n 's/.*static let value: String = "\([^"]*\)".*/\1/p' PrefireExecutable/Sources/prefire/Commands/Version/Version.swift)"
           if [ "$CURRENT" = "$VERSION" ]; then
             echo "::error::Already at version ${VERSION}. Push tag ${VERSION} to publish this commit, or pick a new version."
             exit 1
@@ -76,7 +76,7 @@ jobs:
           git config user.name "$GIT_USER"
           git config user.email "$GIT_EMAIL"
           git add -- \
-            PrefireExecutable/Sources/PrefireCommands/Commands/Version/Version.swift \
+            PrefireExecutable/Sources/prefire/Commands/Version/Version.swift \
             server.json
           git commit -m "Update version to ${VERSION}"
           git tag "${VERSION}"
